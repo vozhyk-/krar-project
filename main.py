@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
+
 import argparse
+
+from language_structure import LanguageStructure
+from scenario import Scenario
+from query import Query
+
+def main(library_file: str, scenario_file: str, query: str = None):
+    structure = LanguageStructure(library_file)
+    scenario = Scenario(scenario_file)
+
+    raw_query = query
+    if raw_query is None:
+        print("The library and the scenario are valid.")
+    else:
+        query = Query(raw_query)
+        result = structure.query(query, scenario)
+        print(result)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -8,5 +25,6 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--scenario-file', nargs='?', type=str, default='scenario.adl3',
                         const='scenario.adl3', help='Path to input ADL3 scenario file')
     parser.add_argument('-q', '--query', nargs='?', type=str, help='Query string to be executed')
-    program_args = vars(parser.parse_args())
-    print('Program arguments:', program_args)
+    args = vars(parser.parse_args())
+
+    main(**args)
