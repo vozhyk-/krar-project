@@ -4,7 +4,6 @@
 
 ```
 cat > lib.adl3 <<EOF
-initially alive && !loaded
 Load causes loaded during 2
 Load releases loaded during 1
 Shoot causes !loaded && !alive during 1
@@ -13,6 +12,7 @@ EOF
 
 cat > scenario.adl3s <<EOF
 OBS:
+0 alive && !loaded
 ACS:
 Load 1 2
 Shoot 3 1
