@@ -1,6 +1,7 @@
 from typing import List
 
 from scenario import Scenario
+import observation_parsing
 
 
 class ScenarioParser:
@@ -13,8 +14,9 @@ class ScenarioParser:
             lines = f.readlines()
         lines = [x.strip() for x in lines]
         observation_lines, action_occurrence_lines = self.split_scenario(lines)
+        observations = observation_parsing.parse(observation_lines)
 
-        return Scenario(observation_lines, action_occurrence_lines)
+        return Scenario(observations, action_occurrence_lines)
 
     def split_scenario(self, lines: List[str]):
         obs_idx = lines.index('OBS:')
