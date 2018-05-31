@@ -1,3 +1,5 @@
+from typing import List
+
 from scenario import Scenario
 
 
@@ -7,14 +9,18 @@ class ScenarioParser:
         pass
 
     def parse(self, file: str):
-        content = []
         with open(file) as f:
-            content = f.readlines()
-        content = [x.strip() for x in content]
-        obs_idx = content.index('OBS:')
-        acs_idx = content.index('ACS:')
-        assert obs_idx < acs_idx
-        observations = content[obs_idx + 1:acs_idx]
-        action_occurrences = content[acs_idx + 1:]
+            lines = f.readlines()
+        lines = [x.strip() for x in lines]
+        observation_lines, action_occurrence_lines = self.split_scenario(lines)
 
-        return Scenario(observations, action_occurrences)
+        return Scenario(observation_lines, action_occurrence_lines)
+
+    def split_scenario(self, lines: List[str]):
+        obs_idx = lines.index('OBS:')
+        acs_idx = lines.index('ACS:')
+        assert obs_idx < acs_idx
+        observations = lines[obs_idx + 1:acs_idx]
+        action_occurrences = lines[acs_idx + 1:]
+
+        return (observations, action_occurrences)
