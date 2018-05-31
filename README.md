@@ -21,3 +21,9 @@ EOF
 $ adl3 -l lib.adl3 -s scenario.adl3s -q "necessary executable Load, Shoot in 2"
 False
 ```
+
+## Running unit tests
+
+```
+python3.6 -m unittest
+```
