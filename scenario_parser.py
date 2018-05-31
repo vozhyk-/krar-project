@@ -10,9 +10,9 @@ class ScenarioParser:
         content = []
         with open(file) as f:
             content = f.readlines()
-        content = [x.strip().split(' ') for x in content]
-        obs_idx = content.index(['OBS:'])
-        acs_idx = content.index(['ACS:'])
+        content = [x.strip() for x in content]
+        obs_idx = content.index('OBS:')
+        acs_idx = content.index('ACS:')
         assert obs_idx < acs_idx
         observations = content[obs_idx + 1:acs_idx]
         action_occurrences = content[acs_idx + 1:]
