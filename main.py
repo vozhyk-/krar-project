@@ -5,15 +5,14 @@ import argparse
 from language_structure import LanguageStructure
 from structs.scenario import Scenario
 from structs.query import Query
-from parsing.scenario_parser import ScenarioParser
+import parsing.scenario_parser
 from parsing.domain_description_parser import DomainDescriptionParser
 
 
 def main(library_file: str, scenario_file: str, query: str = None):
     structure = LanguageStructure(library_file)
-    sc_parser = ScenarioParser()
     dd_parser = DomainDescriptionParser()
-    sc_parser.parse(scenario_file)
+    parsing.scenario_parser.parse(scenario_file)
     dd_parser.parse(library_file)
     raw_query = query
     if raw_query is None:
