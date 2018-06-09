@@ -4,7 +4,7 @@ from structs.scenario import Scenario
 import parsing.observation
 
 
-def parse(file: str):
+def parse_file(file: str):
     with open(file) as f:
         lines = f.readlines()
     lines = [x.strip() for x in lines]
