@@ -2,7 +2,7 @@ import unittest
 import sympy
 
 import parsing.scenario
-from structs.condition import Condition
+import parsing.condition
 
 
 class ScenarioParserTestCase(unittest.TestCase):
@@ -11,10 +11,8 @@ class ScenarioParserTestCase(unittest.TestCase):
 
         assert len(scenario.observations) == 1
         assert scenario.observations[0].begin_time == 0
-
-        alive, loaded = sympy.symbols("alive,loaded")
-        expected_formula = alive & ~loaded
-        assert scenario.observations[0].condition.formula == expected_formula
+        expected_condition = parsing.condition.parse("alive & ~loaded")
+        assert scenario.observations[0].condition == expected_condition
 
         assert len(scenario.action_occurrences) == 2
 
