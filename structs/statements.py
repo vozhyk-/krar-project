@@ -9,3 +9,6 @@ class Releases(Statement):
 
 class ImpossibleIf(Statement):
     pass
+
+class ImpossibleAt(Statement):
+    pass
