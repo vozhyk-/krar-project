@@ -1,5 +1,5 @@
 OBS:
-0 alive && !loaded
+0 alive & ~loaded
 ACS:
 Load 1 2
 Shoot 3 1
