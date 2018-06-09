@@ -35,8 +35,11 @@ def parse(input: str) -> Statement:
         if match:
             return desc["type"](*match.groups())
 
-def parse_causes(*groups):
-    return Causes()
+def parse_causes(raw_action, raw_effect, duration):
+    return Causes(
+        action=raw_action,
+        effect=parsing.condition.parse(raw_effect),
+        duration=int(duration))
 
 def parse_releases(*groups):
     return Releases()

@@ -6,8 +6,10 @@ from structs.condition import Condition
 class Statement:
     pass
 
-class Causes(Statement):
-    pass
+class Causes(Statement, NamedTuple):
+    action: str
+    effect: Condition
+    duration: int
 
 class Releases(Statement):
     pass
