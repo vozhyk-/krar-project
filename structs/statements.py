@@ -6,13 +6,16 @@ from structs.condition import Condition
 class Statement:
     pass
 
-class Causes(Statement, NamedTuple):
+class EffectStatement(Statement, NamedTuple):
     action: str
     effect: Condition
     duration: int
     condition: Condition = True
 
-class Releases(Statement):
+class Causes(EffectStatement):
+    pass
+
+class Releases(EffectStatement):
     pass
 
 class ImpossibleIf(Statement, NamedTuple):

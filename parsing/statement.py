@@ -13,12 +13,8 @@ import parsing.condition
 def parse(input: str) -> Statement:
     type_descriptions = [
         {
-            "regex": re.compile("^([^ ]*) causes (.*?)( if (.*))? during ([0-9]+)$"),
-            "type": parse_causes,
-        },
-        {
-            "regex": re.compile("^([^ ]*) releases (.*) during ([0-9]+)$"),
-            "type": parse_releases,
+            "regex": re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))? during ([0-9]+)$"),
+            "type": parse_effect_statement,
         },
         {
             "regex": re.compile("^impossible ([^ ]*) if (.*)$"),
@@ -35,21 +31,29 @@ def parse(input: str) -> Statement:
         if match:
             return desc["type"](*match.groups())
 
-def parse_causes(raw_action, raw_effect, if_clause, raw_condition, raw_duration):
+def parse_effect_statement(raw_action, raw_statement_type,
+    raw_effect, if_clause, raw_condition, raw_duration):
+
+    statement_type = parse_statement_type(raw_statement_type)
     condition_args = parse_optional_condition_args(raw_condition)
 
-    return Causes(
+    return statement_type(
         action=raw_action,
         effect=parsing.condition.parse(raw_effect),
         duration=int(raw_duration),
         **condition_args)
 
-def parse_releases(*groups):
-    return Releases()
+def parse_statement_type(raw_statement_type: str) -> type:
+    if raw_statement_type == "causes":
+        return Causes
+    elif raw_statement_type == "releases":
+        return Releases
 
 def parse_optional_condition_args(raw_condition: str) -> dict:
     if raw_condition is None:
         return {}
+    # Releases should have a single fluent,
+    # but we just parse it as a formula anyway.
     condition = parsing.condition.parse(raw_condition)
     return {"condition": condition}
 

@@ -4,6 +4,7 @@ import sympy
 import parsing.statement
 from structs.statements import (
     Causes,
+    Releases,
     ImpossibleAt,
     ImpossibleIf
 )
@@ -36,3 +37,22 @@ class StatementParsingTestCase(unittest.TestCase):
                 effect=Condition(charged),
                 condition=Condition(plugged_in),
                 duration=6))
+
+    def test_unconditional_releases(self):
+        statement = parsing.statement.parse("Use releases broken during 14")
+        broken = sympy.symbols("broken")
+        self.assertEqual(statement,
+             Releases(
+                 action="Use",
+                 effect=Condition(broken),
+                 duration=14))
+
+    def test_conditional_releases(self):
+        statement = parsing.statement.parse("Use releases broken if unlucky during 14")
+        broken, unlucky = sympy.symbols("broken,unlucky")
+        self.assertEqual(statement,
+             Releases(
+                 action="Use",
+                 effect=Condition(broken),
+                 condition=Condition(unlucky),
+                 duration=14))
