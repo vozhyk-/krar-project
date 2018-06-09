@@ -4,7 +4,7 @@ from structs.observation import Observation
 import parsing.condition
 
 
-def parse_all(lines: List[str]):
+def parse_all(lines: List[str]) -> List[Observation]:
     return list(map(parse, lines))
 
 def parse(line: str) -> Observation:
