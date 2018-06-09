@@ -7,28 +7,42 @@ from structs.statements import (
     ImpossibleIf,
     ImpossibleAt
 )
+import parsing.condition
 
 
 def parse(input: str) -> Statement:
     type_descriptions = [
         {
             "regex": re.compile("^([^ ]*) causes (.*) during ([0-9]+)$"),
-            "type": Causes,
+            "type": parse_causes,
         },
         {
             "regex": re.compile("^([^ ]*) releases (.*) during ([0-9]+)$"),
-            "type": Releases,
+            "type": parse_releases,
         },
         {
             "regex": re.compile("^impossible ([^ ]*) if (.*)$"),
-            "type": ImpossibleIf,
+            "type": parse_impossible_if,
         },
         {
             "regex": re.compile("^impossible ([^ ]*) at ([0-9]+)$"),
-            "type": ImpossibleAt,
+            "type": parse_impossible_at,
         },
     ]
 
     for desc in type_descriptions:
-        if desc["regex"].search(input):
-            return desc["type"]()
+        match = desc["regex"].search(input)
+        if match:
+            return desc["type"](*match.groups())
+
+def parse_causes(*groups):
+    return Causes()
+
+def parse_releases(*groups):
+    return Releases()
+
+def parse_impossible_if(raw_action, raw_condition):
+    return ImpossibleIf(raw_action, parsing.condition.parse(raw_condition))
+
+def parse_impossible_at(raw_action, raw_time):
+    return ImpossibleAt(raw_action, int(raw_time))

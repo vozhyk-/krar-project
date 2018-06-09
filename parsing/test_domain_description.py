@@ -13,4 +13,7 @@ class DomainDescriptionParsingTestCase(unittest.TestCase):
         assert isinstance(description.statements[0], Causes)
         assert isinstance(description.statements[1], Releases)
         assert isinstance(description.statements[2], Causes)
+
         assert isinstance(description.statements[3], ImpossibleIf)
+        expected_condition = parsing.condition.parse("~loaded")
+        self.assertEqual(description.statements[3].condition, expected_condition)
