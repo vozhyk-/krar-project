@@ -1,7 +1,8 @@
+from typing import NamedTuple
+
 from structs.condition import Condition
 
 
-class Observation:
-    def __init__(self, condition: Condition, begin_time: int):
-        self.condition = condition
-        self.begin_time = begin_time
+class Observation(NamedTuple):
+    condition: Condition
+    begin_time: int
