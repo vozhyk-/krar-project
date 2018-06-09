@@ -3,6 +3,9 @@ import sympy
 
 import parsing.scenario
 import parsing.condition
+from structs.observation import Observation
+from structs.action_occurrence import ActionOccurrence
+from structs.condition import Condition
 
 
 class ScenarioParserTestCase(unittest.TestCase):
@@ -10,16 +13,13 @@ class ScenarioParserTestCase(unittest.TestCase):
         scenario = parsing.scenario.parse_file("example/scenario.txt")
 
         assert len(scenario.observations) == 1
-        assert scenario.observations[0].begin_time == 0
-        expected_condition = parsing.condition.parse("alive & ~loaded")
-        assert scenario.observations[0].condition == expected_condition
+
+        alive, loaded = sympy.symbols("alive,loaded")
+        self.assertEqual(scenario.observations[0],
+            Observation(begin_time=0, condition=Condition(alive & ~loaded)))
 
         assert len(scenario.action_occurrences) == 2
-
-        assert scenario.action_occurrences[0].name == "Load"
-        assert scenario.action_occurrences[0].begin_time == 1
-        assert scenario.action_occurrences[0].duration == 2
-
-        assert scenario.action_occurrences[1].name == "Shoot"
-        assert scenario.action_occurrences[1].begin_time == 3
-        assert scenario.action_occurrences[1].duration == 1
+        self.assertEqual(scenario.action_occurrences[0],
+            ActionOccurrence(name="Load", begin_time=1, duration=2))
+        self.assertEqual(scenario.action_occurrences[1],
+            ActionOccurrence(name="Shoot", begin_time=3, duration=1))
