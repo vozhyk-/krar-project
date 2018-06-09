@@ -16,4 +16,4 @@ class ScenarioParserTestCase(unittest.TestCase):
         expected_formula = alive & ~loaded
         assert scenario.observations[0].condition.formula == expected_formula
 
-        assert len(scenario.action_occurences) == 2
+        assert len(scenario.action_occurrences) == 2
