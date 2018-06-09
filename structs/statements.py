@@ -10,6 +10,7 @@ class Causes(Statement, NamedTuple):
     action: str
     effect: Condition
     duration: int
+    condition: Condition = True
 
 class Releases(Statement):
     pass

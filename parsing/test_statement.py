@@ -26,3 +26,13 @@ class StatementParsingTestCase(unittest.TestCase):
         charged = sympy.symbols("charged")
         self.assertEqual(statement,
             Causes(action="Charge", effect=Condition(charged), duration=6))
+
+    def test_conditional_causes(self):
+        statement = parsing.statement.parse("Charge causes charged if plugged_in during 6")
+        charged, plugged_in = sympy.symbols("charged,plugged_in")
+        self.assertEqual(statement,
+            Causes(
+                action="Charge",
+                effect=Condition(charged),
+                condition=Condition(plugged_in),
+                duration=6))
