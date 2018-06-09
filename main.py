@@ -3,10 +3,10 @@
 import argparse
 
 from language_structure import LanguageStructure
-from scenario import Scenario
-from query import Query
-from scenario_parser import ScenarioParser
-from domain_description_parser import DomainDescriptionParser
+from structs.scenario import Scenario
+from structs.query import Query
+from parsing.scenario_parser import ScenarioParser
+from parsing.domain_description_parser import DomainDescriptionParser
 
 
 def main(library_file: str, scenario_file: str, query: str = None):

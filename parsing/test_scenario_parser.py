@@ -1,8 +1,7 @@
 import unittest
 
-from scenario_parser import ScenarioParser
-from condition import Condition
-import condition_parsing
+from parsing.scenario_parser import ScenarioParser
+from structs.condition import Condition
 
 
 class ScenarioParserTestCase(unittest.TestCase):

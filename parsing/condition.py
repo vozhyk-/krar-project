@@ -1,4 +1,4 @@
-from condition import Condition
+from structs.condition import Condition
 
 def parse(input: str) -> Condition:
     return Condition()

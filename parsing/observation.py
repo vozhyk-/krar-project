@@ -1,7 +1,7 @@
 from typing import List
 
-from observation import Observation
-import condition_parsing
+from structs.observation import Observation
+import parsing.condition
 
 
 def parse(lines: List[str]):
@@ -10,5 +10,5 @@ def parse(lines: List[str]):
 def parse_line(line: str) -> Observation:
     raw_begin_time, raw_condition = line.split(' ', 1)
     begin_time = int(raw_begin_time)
-    condition = condition_parsing.parse(raw_condition)
+    condition = parsing.condition.parse(raw_condition)
     return Observation(condition, begin_time)

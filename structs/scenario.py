@@ -1,7 +1,7 @@
 from typing import List
 
-from observation import Observation
-from action_occurence import ActionOccurence
+from structs.observation import Observation
+from structs.action_occurence import ActionOccurence
 
 
 class Scenario:
