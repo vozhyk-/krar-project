@@ -6,14 +6,13 @@ from language_structure import LanguageStructure
 from structs.scenario import Scenario
 from structs.query import Query
 import parsing.scenario
-from parsing.domain_description_parser import DomainDescriptionParser
+import parsing.domain_description
 
 
 def main(library_file: str, scenario_file: str, query: str = None):
     structure = LanguageStructure(library_file)
-    dd_parser = DomainDescriptionParser()
     parsing.scenario.parse_file(scenario_file)
-    dd_parser.parse(library_file)
+    parsing.domain_description.parse(library_file)
     raw_query = query
     if raw_query is None:
         print("The library and the scenario are valid.")
