@@ -1,6 +1,8 @@
-def parse_file(file: str):
-    content = []
+from structs.domain_description import DomainDescription
+
+def parse_file(file: str) -> DomainDescription:
     with open(file) as f:
-        content = f.readlines()
-    content = [x.strip().split(' ') for x in content]
-    return content
+        lines = f.readlines()
+    lines = [x.strip() for x in lines]
+
+    return DomainDescription(lines)

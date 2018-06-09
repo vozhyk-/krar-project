@@ -7,4 +7,4 @@ class DomainDescriptionParsingTestCase(unittest.TestCase):
     def test_parse_example(self):
         description = parsing.domain_description.parse_file("example/lib.adl3")
 
-        assert len(description) == 4
+        assert len(description.statements) == 4
