@@ -1,4 +1,4 @@
 Load causes loaded during 2
 Load releases loaded during 1
-Shoot causes !loaded && !alive during 1
-impossible Shoot if !loaded
+Shoot causes ~loaded & ~alive during 1
+impossible Shoot if ~loaded
