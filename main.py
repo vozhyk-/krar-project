@@ -12,7 +12,7 @@ import parsing.domain_description
 def main(library_file: str, scenario_file: str, query: str = None):
     structure = LanguageStructure(library_file)
     parsing.scenario.parse_file(scenario_file)
-    parsing.domain_description.parse(library_file)
+    parsing.domain_description.parse_file(library_file)
     raw_query = query
     if raw_query is None:
         print("The library and the scenario are valid.")

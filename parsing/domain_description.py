@@ -1,4 +1,4 @@
-def parse(file: str):
+def parse_file(file: str):
     content = []
     with open(file) as f:
         content = f.readlines()
