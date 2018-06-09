@@ -10,16 +10,25 @@ from structs.statements import (
 
 
 def parse(input: str) -> Statement:
-    causes_regex = re.compile("^([^ ]*) causes (.*) during ([0-9]+)$")
-    releases_regex = re.compile("^([^ ]*) releases (.*) during ([0-9]+)$")
-    impossible_if_regex = re.compile("^impossible ([^ ]*) if (.*)$")
-    impossible_at_regex = re.compile("^impossible ([^ ]*) at ([0-9]+)$")
+    type_descriptions = [
+        {
+            "regex": re.compile("^([^ ]*) causes (.*) during ([0-9]+)$"),
+            "type": Causes,
+        },
+        {
+            "regex": re.compile("^([^ ]*) releases (.*) during ([0-9]+)$"),
+            "type": Releases,
+        },
+        {
+            "regex": re.compile("^impossible ([^ ]*) if (.*)$"),
+            "type": ImpossibleIf,
+        },
+        {
+            "regex": re.compile("^impossible ([^ ]*) at ([0-9]+)$"),
+            "type": ImpossibleAt,
+        },
+    ]
 
-    if causes_regex.search(input):
-        return Causes()
-    elif releases_regex.search(input):
-        return Releases()
-    elif impossible_if_regex.search(input):
-        return ImpossibleIf()
-    elif impossible_at_regex.search(input):
-        return ImpossibleAt()
+    for desc in type_descriptions:
+        if desc["regex"].search(input):
+            return desc["type"]()
