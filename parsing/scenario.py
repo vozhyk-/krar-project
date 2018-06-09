@@ -5,7 +5,7 @@ import parsing.observation
 import parsing.action_occurrence
 
 
-def parse_file(file: str):
+def parse_file(file: str) -> Scenario:
     with open(file) as f:
         lines = f.readlines()
     lines = [x.strip() for x in lines]
