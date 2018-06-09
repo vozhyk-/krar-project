@@ -1,7 +1,9 @@
 import unittest
+import sympy
 
 import parsing.domain_description
 from structs.statements import Causes, Releases, ImpossibleIf
+from structs.condition import Condition
 
 
 class DomainDescriptionParsingTestCase(unittest.TestCase):
@@ -10,10 +12,12 @@ class DomainDescriptionParsingTestCase(unittest.TestCase):
 
         assert len(description.statements) == 4
 
-        assert isinstance(description.statements[0], Causes)
-        assert isinstance(description.statements[1], Releases)
-        assert isinstance(description.statements[2], Causes)
-
-        assert isinstance(description.statements[3], ImpossibleIf)
-        expected_condition = parsing.condition.parse("~loaded")
-        self.assertEqual(description.statements[3].condition, expected_condition)
+        alive, loaded = sympy.symbols("alive,loaded")
+        self.assertEqual(description.statements[0], Causes(
+            action="Load", effect=Condition(loaded), duration=2))
+        self.assertEqual(description.statements[1], Releases(
+            action="Load", effect=Condition(loaded), duration=1))
+        self.assertEqual(description.statements[2], Causes(
+            action="Shoot", effect=Condition(~loaded & ~alive), duration=1))
+        self.assertEqual(description.statements[3], ImpossibleIf(
+            action="Shoot", condition=Condition(~loaded)))
