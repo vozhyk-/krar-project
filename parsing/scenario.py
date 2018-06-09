@@ -9,7 +9,7 @@ def parse(file: str):
         lines = f.readlines()
     lines = [x.strip() for x in lines]
     observation_lines, action_occurrence_lines = split_scenario(lines)
-    observations = parsing.observation.parse(observation_lines)
+    observations = parsing.observation.parse_all(observation_lines)
 
     return Scenario(observations, action_occurrence_lines)
 
