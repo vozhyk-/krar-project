@@ -11,54 +11,59 @@ import parsing.condition
 
 
 def parse(input: str) -> Statement:
-    type_descriptions = [
-        {
-            "regex": re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))? during ([0-9]+)$"),
-            "type": parse_effect_statement,
-        },
-        {
-            "regex": re.compile("^impossible ([^ ]*) if (.*)$"),
-            "type": parse_impossible_if,
-        },
-        {
-            "regex": re.compile("^impossible ([^ ]*) at ([0-9]+)$"),
-            "type": parse_impossible_at,
-        },
+    types = [
+        EffectStatementParser,
+        ImpossibleIfParser,
+        ImpossibleAtParser,
     ]
 
-    for desc in type_descriptions:
-        match = desc["regex"].search(input)
+    for t in types:
+        match = t.regex.search(input)
         if match:
-            return desc["type"](*match.groups())
+            return t.parse_groups(*match.groups())
 
-def parse_effect_statement(raw_action, raw_statement_type,
-    raw_effect, if_clause, raw_condition, raw_duration):
+class EffectStatementParser:
+    regex = re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))? during ([0-9]+)$")
 
-    statement_type = parse_statement_type(raw_statement_type)
-    condition_args = parse_optional_condition_args(raw_condition)
+    @staticmethod
+    def parse_groups(raw_action, raw_statement_type,
+        raw_effect, if_clause, raw_condition, raw_duration):
 
-    return statement_type(
-        action=raw_action,
-        effect=parsing.condition.parse(raw_effect),
-        duration=int(raw_duration),
-        **condition_args)
+        statement_type = EffectStatementParser.parse_statement_type(raw_statement_type)
+        condition_args = EffectStatementParser.parse_optional_condition_args(raw_condition)
 
-def parse_statement_type(raw_statement_type: str) -> type:
-    if raw_statement_type == "causes":
-        return Causes
-    elif raw_statement_type == "releases":
-        return Releases
+        return statement_type(
+            action=raw_action,
+            effect=parsing.condition.parse(raw_effect),
+            duration=int(raw_duration),
+            **condition_args)
 
-def parse_optional_condition_args(raw_condition: str) -> dict:
-    if raw_condition is None:
-        return {}
-    # Releases should have a single fluent,
-    # but we just parse it as a formula anyway.
-    condition = parsing.condition.parse(raw_condition)
-    return {"condition": condition}
+    @staticmethod
+    def parse_statement_type(raw_statement_type: str) -> type:
+        if raw_statement_type == "causes":
+            return Causes
+        elif raw_statement_type == "releases":
+            return Releases
 
-def parse_impossible_if(raw_action, raw_condition):
-    return ImpossibleIf(raw_action, parsing.condition.parse(raw_condition))
+    @staticmethod
+    def parse_optional_condition_args(raw_condition: str) -> dict:
+        if raw_condition is None:
+            return {}
+        # Releases should have a single fluent,
+        # but we just parse it as a formula anyway.
+        condition = parsing.condition.parse(raw_condition)
+        return {"condition": condition}
 
-def parse_impossible_at(raw_action, raw_time):
-    return ImpossibleAt(raw_action, int(raw_time))
+class ImpossibleIfParser:
+    regex = re.compile("^impossible ([^ ]*) if (.*)$")
+
+    @staticmethod
+    def parse_groups(raw_action, raw_condition):
+        return ImpossibleIf(raw_action, parsing.condition.parse(raw_condition))
+
+class ImpossibleAtParser:
+    regex = re.compile("^impossible ([^ ]*) at ([0-9]+)$")
+
+    @staticmethod
+    def parse_groups(raw_action, raw_time):
+        return ImpossibleAt(raw_action, int(raw_time))
