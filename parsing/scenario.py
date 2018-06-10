@@ -15,6 +15,7 @@ def parse_file(file: str) -> Scenario:
 
     return Scenario(observations, action_occurrences)
 
+
 def split_scenario(lines: List[str]):
     obs_idx = lines.index('OBS:')
     acs_idx = lines.index('ACS:')
@@ -22,4 +23,4 @@ def split_scenario(lines: List[str]):
     observations = lines[obs_idx + 1:acs_idx]
     action_occurrences = lines[acs_idx + 1:]
 
-    return (observations, action_occurrences)
+    return observations, action_occurrences

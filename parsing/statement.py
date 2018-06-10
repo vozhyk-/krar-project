@@ -22,12 +22,13 @@ def parse(input: str) -> Statement:
         if match:
             return t.parse_groups(*match.groups())
 
+
 class EffectStatementParser:
     regex = re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))? during ([0-9]+)$")
 
     @staticmethod
     def parse_groups(raw_action, raw_statement_type,
-        raw_effect, if_clause, raw_condition, raw_duration):
+                     raw_effect, if_clause, raw_condition, raw_duration):
 
         statement_type = EffectStatementParser.parse_statement_type(raw_statement_type)
         condition_args = EffectStatementParser.parse_optional_condition_args(raw_condition)
@@ -54,12 +55,14 @@ class EffectStatementParser:
         condition = parsing.condition.parse(raw_condition)
         return {"condition": condition}
 
+
 class ImpossibleIfParser:
     regex = re.compile("^impossible ([^ ]*) if (.*)$")
 
     @staticmethod
     def parse_groups(raw_action, raw_condition):
         return ImpossibleIf(raw_action, parsing.condition.parse(raw_condition))
+
 
 class ImpossibleAtParser:
     regex = re.compile("^impossible ([^ ]*) at ([0-9]+)$")

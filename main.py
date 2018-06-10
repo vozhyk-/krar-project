@@ -21,6 +21,7 @@ def main(library_file: str, scenario_file: str, query: str = None):
         result = structure.query(query)
         print(result)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--library-file', nargs='?', type=str, default='example/lib.adl3',

@@ -1,6 +1,7 @@
 from structs.query import Query
 from structs.scenario import Scenario
 
+
 class LanguageStructure:
     def __init__(self, source_file: str):
         pass
