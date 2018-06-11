@@ -19,11 +19,7 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
     if len(queries) == 0 and checker.is_consistent:
         print("The library and the scenario are valid.")
     else:
-        pass
-        # print("The library and the scenario are not valid.")
-        # query = Query(raw_query)
-        # result = structure.query(query)
-        #print(result)
+        print('Queries:', queries)
 
 
 if __name__ == '__main__':
