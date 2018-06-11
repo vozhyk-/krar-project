@@ -6,8 +6,7 @@ class InconsistencyChecker:
         self.is_consistent = True
         actions = sorted(scen.action_occurrences, key=lambda action: action.begin_time)
         for i in range(len(actions) - 1):
-            if (actions[i].name != actions[i + 1].name):
-                if (actions[i].begin_time + actions[i].duration) > actions[i + 1].begin_time:
-                    self.is_consistent = False
-                    break
+            if (actions[i].begin_time + actions[i].duration) > actions[i + 1].begin_time:
+                self.is_consistent = False
+                break
         print(self.is_consistent)
