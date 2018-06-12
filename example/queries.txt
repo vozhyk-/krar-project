@@ -6,3 +6,4 @@ some random sentence that wont match regex
 necessary alive & ~loaded at 0 when scenario.txt
 necessary alive & ~loaded at -1 when scenario.txt
 possibly ~loaded & ~alive at 4 when scenario.txt
+necessary ~loaded & ~alive at 4 when scenario.txt

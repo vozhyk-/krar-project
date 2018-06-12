@@ -11,7 +11,7 @@ class QueryTestCase(unittest.TestCase):
     def test_parse_example(self):
         queries = parsing.query.parse_file("../example/queries.txt")
         # self.assertEqual(len(queries), 6)
-        assert len(queries) == 5
+        assert len(queries) == 6
 
         # necessary executable load,shoot in 3 (ActionQuery)
         self.assertEqual(queries[0].query_type, structs.query.QueryType.NECESSARY)
@@ -38,3 +38,8 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(queries[4].query_type, structs.query.QueryType.POSSIBLY)
         self.assertEqual(queries[4].condition.formula, ~loaded & ~alive)
         self.assertEqual(queries[4].time_point, 4)
+
+        # necessary ~loaded & ~alive at 4 when scenario.txt (ScenarioQuery)
+        self.assertEqual(queries[5].query_type, structs.query.QueryType.NECESSARY)
+        self.assertEqual(queries[5].condition.formula, ~loaded & ~alive)
+        self.assertEqual(queries[5].time_point, 4)
