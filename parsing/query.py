@@ -13,7 +13,7 @@ def parse_file(query_file: str) -> List[Query]:
 
 def parse_query(raw_query: str) -> Union[Query, None]:
 
-    action_regex = re.compile("(necessary|possibly) executable (.*?) in ([0-9]+)$")
+    action_regex = re.compile("(necessary|possibly) executable (.*?) in ([1-9]+)$")
     scenario_regex = re.compile("(necessary|possibly) (.*?) at ([0-9]+) when ([a-zA-Z0-9].*[a-zA-Z0-9]+)$")
     action_match = action_regex.search(raw_query)
     if action_match:
