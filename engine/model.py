@@ -3,7 +3,8 @@ from structs.scenario import Scenario
 from structs.fluent import Fluent
 from structs.action_occurrence import ActionOccurrence
 import parsing.domain_description, parsing.scenario
-from sympy import Symbol
+from sympy import Symbol, Not, Or, And
+from sympy.logic.inference import satisfiable
 
 
 class Model:
@@ -11,6 +12,7 @@ class Model:
         self.domain_description = domain_description
         self.scenario = scenario
         self.fluents = self.parse_fluents()
+        self.consistent = False
 
     def history_function(self, fluents: Fluent, time_point: int):
         pass
@@ -24,12 +26,9 @@ class Model:
     def parse_fluents(self):
         fluents = []
         for observation in self.scenario.observations:
-            for arg in observation.condition.formula.args:
-                if type(arg) == Symbol:
-                    fluents.append(Fluent(arg.name, ~arg.is_Not))
-                else:
-                    fluents.append(Fluent(str(arg.args[0]),~arg.is_Not))
-
+            if observation.begin_time == 0:
+                for key, value in satisfiable(observation.condition.formula).items():
+                    fluents.append(Fluent(key.name, value))
 
         return fluents
 
