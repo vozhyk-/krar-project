@@ -1,6 +1,5 @@
 import unittest
 import sympy
-
 import parsing.domain_description
 from structs.statements import Causes, Releases, ImpossibleIf
 from structs.condition import Condition

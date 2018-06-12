@@ -1,6 +1,7 @@
 from structs.domain_description import DomainDescription
 import parsing.statement
 
+
 def parse_file(file: str) -> DomainDescription:
     with open(file) as f:
         lines = f.readlines()

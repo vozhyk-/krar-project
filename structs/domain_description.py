@@ -1,8 +1,7 @@
-from typing import List
+from typing import NamedTuple, List
 
 from structs.statements import Statement
 
 
-class DomainDescription:
-    def __init__(self, statements: List[Statement]):
-        self.statements = statements
+class DomainDescription(NamedTuple):
+    statements: List[Statement]
