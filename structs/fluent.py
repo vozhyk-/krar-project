@@ -1,5 +1,5 @@
 class Fluent:
-    def __init__(self, name: str, value: bool):
+    def __init__(self, name: str = None, value: bool = None):
         self.name = name
         self.value = value
 

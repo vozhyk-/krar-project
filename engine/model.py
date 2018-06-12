@@ -4,7 +4,7 @@ from structs.fluent import Fluent
 from structs.action_occurrence import ActionOccurrence
 import parsing.domain_description, parsing.scenario
 from sympy.logic.inference import satisfiable
-import numpy
+from numpy import ndarray
 
 
 class Model:
@@ -13,26 +13,27 @@ class Model:
         self.scenario = scenario
         self.fluents = self.parse_initial_fluents()
         self.consistent = False
-        last_action = scenario.action_occurrences[-1]
-        self.last_time_point = last_action.begin_time + last_action.duration + 1
-        self.fluent_history = numpy.zeros(shape = (len(self.fluents), self.last_time_point))
+        self.fluent_history = self.initialize_history()
 
-    def history_function(self, fluent: Fluent, time_point: int):
-        row = self.get_fluent_row(fluent)
-        if row != -1:
-            if time_point < self.last_time_point:
-                return self.fluent_history[row, time_point]
-            else:
-                return self.fluent_history[row, -1]
-        return None
+    def initialize_history(self) -> ndarray:
+        last_action = self.scenario.action_occurrences[-1]
+        last_time_point = last_action.begin_time + last_action.duration + 1
+        fluent_history = ndarray(shape=(last_time_point, len(self.fluents)), dtype=Fluent)
+        for observation in self.scenario.observations:
+            for key, value in satisfiable(observation.condition.formula).items():
+                fluent = Fluent(key.name, value)
+                begin_time = observation.begin_time
+                for i in range(0, len(fluent_history[begin_time])):
+                    if fluent_history[begin_time][i] is None:
+                        fluent_history[begin_time][i] = fluent
+                        break
+                    else:
+                        continue
+        return fluent_history
 
-    def get_fluent_row(self, fluent: Fluent):
-        row = -1
-        for i in range(len(self.fluents)):
-            if self.fluents[i].name == fluent.name:
-                row = i
-                break
-        return row
+    def history_function(self, fluent: Fluent, time_point: int) -> bool:
+        time_point_row = self.fluent_history[time_point]
+        return time_point_row.__contains__(fluent)
 
     def occlusion_function(self, action: ActionOccurrence, time_point: int):
         pass
