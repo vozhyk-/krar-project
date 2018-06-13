@@ -12,23 +12,16 @@ class Model:
         self.domain_description = domain_description
         self.scenario = scenario
         self.fluents = self.parse_initial_fluents()
-        self.consistent = False  # still to be checked later on
+        self.is_consistent = True
         last_action = self.scenario.action_occurrences[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history()
+        self.prev_time_point = 0
 
     def initialize_history(self) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
-        for observation in self.scenario.observations:
-            for key, value in satisfiable(observation.condition.formula).items():
-                fluent = Fluent(key.name, value)
-                begin_time = observation.begin_time
-                for i in range(0, len(fluent_history[begin_time])):
-                    if fluent_history[begin_time][i] is None:
-                        fluent_history[begin_time][i] = fluent
-                        break
-                    else:
-                        continue
+        for i in range(len(self.fluents)):
+            fluent_history[0][i] = self.fluents[i]
         return fluent_history
 
     def history_function(self, fluent: Fluent, time_point: int) -> bool:
@@ -55,6 +48,25 @@ class Model:
 
         return fluents
 
+    #TODO execution of the action
+    def execute(self, action: ActionOccurrence):
+        self.inertia_law(action.begin_time)
+        #do to something
+        pass
 
-md = Model(domain_description=parsing.domain_description.parse_file("../example/lib.adl3"),
-           scenario=parsing.scenario.parse_file("../example/scenario.txt"))
+    def inertia_law(self, time_point: int):
+        for i in range(len(self.fluents)):
+            for j in range(self.prev_time_point, time_point):
+                self.fluent_history[j][i] = self.fluent_history[self.prev_time_point][i]
+        self.prev_time_point = time_point
+
+    def fork_model(self, time_point: int):
+        model = Model(self.domain_description, self.scenario)
+        for i in range(len(self.fluents)):
+            for j in range(0, time_point):
+                model.fluent_history[j][i] = self.fluent_history[j][i]
+        model.prev_time_point = time_point
+        return model
+
+    def invalidate_model(self):
+        self.is_consistent = False

@@ -11,6 +11,7 @@ class Preprocessor:
         unique_domain = self.remove_duplicated_statements(domain_description)
         unique_obs = self.remove_duplicated_observations(scenario.observations)
         unique_actions = self.remove_duplicated_actions(scenario.action_occurrences)
+        unique_actions = sorted(unique_actions, key=lambda action: action.begin_time)
         unique_scenario = Scenario(unique_obs, unique_actions)
         return unique_domain, unique_scenario
 
