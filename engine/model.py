@@ -12,13 +12,13 @@ class Model:
         self.domain_description = domain_description
         self.scenario = scenario
         self.fluents = self.parse_initial_fluents()
-        self.consistent = False
+        self.consistent = False  # still to be checked later on
+        last_action = self.scenario.action_occurrences[-1]
+        self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history()
 
     def initialize_history(self) -> ndarray:
-        last_action = self.scenario.action_occurrences[-1]
-        last_time_point = last_action.begin_time + last_action.duration + 1
-        fluent_history = ndarray(shape=(last_time_point, len(self.fluents)), dtype=Fluent)
+        fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
         for observation in self.scenario.observations:
             for key, value in satisfiable(observation.condition.formula).items():
                 fluent = Fluent(key.name, value)
@@ -35,8 +35,16 @@ class Model:
         time_point_row = self.fluent_history[time_point]
         return time_point_row.__contains__(fluent)
 
-    def occlusion_function(self, action: ActionOccurrence, time_point: int):
-        pass
+    def occlusion_function(self, action: ActionOccurrence, time_point: int = None):
+        fluents_under_influence = []
+        start_time = time_point if time_point >= 0 else action.begin_time
+        end_time = start_time + action.duration + 1
+        for i in range(start_time, end_time):
+            for fluent in self.fluent_history[i]:
+                if fluent is not None:
+                    fluents_under_influence.append(fluent)
+
+        return fluents_under_influence
 
     def parse_initial_fluents(self):
         fluents = []
