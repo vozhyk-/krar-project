@@ -16,7 +16,6 @@ class Model:
         last_action = self.scenario.action_occurrences[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history()
-        self.history_function(self.fluent_history[0][0], 0)
 
     def initialize_history(self) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
