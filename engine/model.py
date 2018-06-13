@@ -54,7 +54,3 @@ class Model:
                     fluents.append(Fluent(key.name, value))
 
         return fluents
-
-
-md = Model(domain_description=parsing.domain_description.parse_file("../example/lib.adl3"),
-           scenario=parsing.scenario.parse_file("../example/scenario.txt"))
