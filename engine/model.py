@@ -37,7 +37,7 @@ class Model:
 
     def occlusion_function(self, action: ActionOccurrence, time_point: int = None):
         fluents_under_influence = []
-        start_time = time_point if time_point >= 0 else action.begin_time
+        start_time = time_point if 0 <= time_point < action.begin_time else action.begin_time
         end_time = start_time + action.duration + 1
         for i in range(start_time, end_time):
             for fluent in self.fluent_history[i]:
