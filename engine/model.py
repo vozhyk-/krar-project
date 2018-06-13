@@ -16,6 +16,7 @@ class Model:
         last_action = self.scenario.action_occurrences[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history()
+        self.history_function(self.fluent_history[0][0], 0)
 
     def initialize_history(self) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
@@ -31,13 +32,16 @@ class Model:
                         continue
         return fluent_history
 
-    def history_function(self, fluent: Fluent, time_point: int) -> bool:
+    def history_function(self, fluent: Fluent, time_point: int):
         time_point_row = self.fluent_history[time_point]
-        return time_point_row.__contains__(fluent)
+        if time_point_row.__contains__(fluent):
+            return fluent.value
+        else:
+            return None
 
-    def occlusion_function(self, action: ActionOccurrence, time_point: int = None):
+    def occlusion_function(self, action: ActionOccurrence):
         fluents_under_influence = []
-        start_time = time_point if 0 <= time_point < action.begin_time else action.begin_time
+        start_time = action.begin_time
         end_time = start_time + action.duration + 1
         for i in range(start_time, end_time):
             for fluent in self.fluent_history[i]:
