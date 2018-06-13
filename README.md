@@ -25,5 +25,5 @@ False
 ## Running unit tests
 
 ```
-python3.6 -m unittest discover parsing
+python3.6 -m unittest
 ```
