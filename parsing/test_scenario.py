@@ -12,13 +12,17 @@ class ScenarioParserTestCase(unittest.TestCase):
     def test_test(self):
         scenario = parsing.scenario.parse_file("example/scenario.txt")
 
-        assert len(scenario.observations) == 1
+        self.assertEqual(len(scenario.observations), 2)
 
-        alive, loaded = sympy.symbols("alive,loaded")
-        self.assertEqual(scenario.observations[0],
-                         Observation(begin_time=0, condition=Condition(alive & ~loaded)))
+        alive, loaded, hidden = sympy.symbols("alive,loaded,hidden")
+        self.assertEqual(scenario.observations[0], Observation(
+            begin_time=0,
+            condition=Condition(alive & ~loaded & ~hidden)))
+        self.assertEqual(scenario.observations[1], Observation(
+            begin_time=1,
+            condition=Condition(~alive & loaded & hidden)))
 
-        assert len(scenario.action_occurrences) == 2
+        self.assertEqual(len(scenario.action_occurrences), 2)
         self.assertEqual(scenario.action_occurrences[0],
                          ActionOccurrence(name="Load", begin_time=1, duration=2))
         self.assertEqual(scenario.action_occurrences[1],

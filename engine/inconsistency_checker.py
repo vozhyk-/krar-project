@@ -9,4 +9,3 @@ class InconsistencyChecker:
             if (actions[i].begin_time + actions[i].duration) > actions[i + 1].begin_time:
                 self.is_consistent = False
                 break
-        print(self.is_consistent)

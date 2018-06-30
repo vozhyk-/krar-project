@@ -29,7 +29,6 @@ class EffectStatementParser:
     @staticmethod
     def parse_groups(raw_action, raw_statement_type,
                      raw_effect, if_clause, raw_condition, raw_duration):
-        print('raw_action:', raw_action, 'raw_statement_type:', raw_statement_type, 'raw_effect:', raw_effect, 'raw_condition:', raw_condition, 'raw_duration:', raw_duration)
         statement_type = EffectStatementParser.parse_statement_type(raw_statement_type)
         condition_args = EffectStatementParser.parse_optional_condition_args(raw_condition)
 
