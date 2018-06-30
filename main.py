@@ -13,13 +13,13 @@ import parsing.query
 def main(library_file: str, scenario_file: str, query_file: str = None):
     structure = LanguageStructure(library_file)
     scenario = parsing.scenario.parse_file(scenario_file)
-    checker = InconsistencyChecker(scenario)
     domain_desc = parsing.domain_description.parse_file(library_file)
     queries = parsing.query.parse_file(query_file)
     prec = Preprocessor()
     unique_domain_desc, unique_scenario = prec.remove_duplicates(domain_desc, scenario)
-
-    if len(queries) == 0 and checker.is_consistent:
+    # After pre-processing the domain desc and scenario, pass it to the inconsistency_checker
+    inconsistency_checker = InconsistencyChecker(unique_domain_desc, unique_scenario)
+    if len(queries) == 0 or inconsistency_checker.is_consistent:
         print("The library and the scenario are valid.")
     else:
         print('Queries:', queries)
