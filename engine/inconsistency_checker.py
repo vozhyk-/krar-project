@@ -81,4 +81,5 @@ class InconsistencyChecker:
             for i in range(1, len(self.sorted_observations)):
                 for fluent_name, fluent_val in satisfiable(self.sorted_observations[i].condition.formula).items():
                     if fluent_name not in initial_fluents:
-                        print('Fluent:', fluent_name, ' was not defined in the initial state!')
+                        self.is_consistent = False
+                        print('Fluent:', fluent_name, 'was not defined in the initial state!')
