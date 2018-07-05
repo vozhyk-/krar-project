@@ -2,17 +2,19 @@ from structs.domain_description import DomainDescription
 from structs.scenario import Scenario
 from structs.fluent import Fluent
 from structs.action_occurrence import ActionOccurrence
+from structs.observation import Observation
+from typing import List
 import parsing.domain_description, parsing.scenario
 from sympy.logic.inference import satisfiable
 from numpy import ndarray
 
 
 class Model:
-    def __init__(self, domain_description: DomainDescription, scenario: Scenario):
-        self.domain_description = domain_description
+    def __init__(self, scenario: Scenario):
+        # self.domain_description = domain_description
         self.scenario = scenario
         self.fluents = self.parse_initial_fluents()
-        self.consistent = False  # still to be checked later on
+        # self.consistent = False  # still to be checked later on
         last_action = self.scenario.action_occurrences[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history()
@@ -58,6 +60,16 @@ class Model:
 
         return fluents
 
-
-md = Model(domain_description=parsing.domain_description.parse_file("../example/lib.adl3"),
-           scenario=parsing.scenario.parse_file("../example/scenario.txt"))
+    def __str__(self):
+        string = ''
+        for i in range(self.fluent_history.shape[0]):
+            string += 'Timepoint ' + str(i) + ': '
+            for j in range(self.fluent_history.shape[1]):
+                if self.fluent_history[i][j] is not None:
+                    string += self.fluent_history[i][j].name + ' ' + str(self.fluent_history[i][j].value)
+                else:
+                    string += 'None'
+                if j != self.fluent_history.shape[1] - 1:
+                    string += ', '
+            string += '\n'
+        return string

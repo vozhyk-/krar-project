@@ -5,6 +5,7 @@ from language_structure import LanguageStructure
 from structs.query import Query
 from engine.inconsistency_checker import InconsistencyChecker
 from engine.preprocessor import Preprocessor
+from engine.engine import Engine
 import parsing.scenario
 import parsing.domain_description
 import parsing.query
@@ -19,8 +20,12 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
     unique_domain_desc, unique_scenario = prec.remove_duplicates(domain_desc, scenario)
     # After pre-processing the domain desc and scenario, pass it to the inconsistency_checker
     inconsistency_checker = InconsistencyChecker(unique_domain_desc, unique_scenario)
-    if len(queries) == 0 or inconsistency_checker.is_consistent:
+
+    if len(queries) == 0:
         print("The library and the scenario are valid.")
+    elif inconsistency_checker.is_consistent:
+        # Inconsistency checker verified the scenario and domain description, so we can create our models
+        engine = Engine(inconsistency_checker)
     else:
         print('Queries:', queries)
 

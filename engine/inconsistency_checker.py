@@ -8,15 +8,18 @@ from structs.statements import Causes, Releases
 class InconsistencyChecker:
     def __init__(self, domain_desc: DomainDescription, scen: Scenario):
         self.is_consistent = True
-        self.sorted_actions = sorted(scen.action_occurrences, key=lambda action: action.begin_time)
+        self.valid_scenario = None
         self.sorted_observations = sorted(scen.observations, key=lambda observation: observation.begin_time)
+        self.sorted_actions = sorted(scen.action_occurrences, key=lambda action: action.begin_time)
         self.domain_desc = domain_desc
-        print('self.sorted_actions:', self.sorted_actions)
-        print('self.sorted_observations:', self.sorted_observations)
         # Validate scenario
         self.check_for_overlapping_actions()
         self.check_for_contradictory_domain_desc()
         self.check_for_invalid_initial_state()
+        if self.is_consistent:
+            self.valid_scenario = Scenario(self.sorted_observations, self.sorted_actions)
+            print('self.valid_scenario.action_occurrences', self.valid_scenario.action_occurrences)
+            print('self.valid_scenario.observations:', self.valid_scenario.observations)
 
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
