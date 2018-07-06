@@ -7,6 +7,7 @@ from typing import List
 import parsing.domain_description, parsing.scenario
 from sympy.logic.inference import satisfiable
 from numpy import ndarray
+from sympy.logic import boolalg
 
 
 class Model:
@@ -25,12 +26,18 @@ class Model:
             for key, value in satisfiable(observation.condition.formula).items():
                 fluent = Fluent(key.name, value)
                 begin_time = observation.begin_time
-                for i in range(0, len(fluent_history[begin_time])):
+                for i in range(len(fluent_history[begin_time])):
                     if fluent_history[begin_time][i] is None:
                         fluent_history[begin_time][i] = fluent
                         break
                     else:
                         continue
+        # Assume inertia law
+        for i in range(fluent_history.shape[0] - 1):
+            for j in range(fluent_history.shape[1]):
+                if fluent_history[i][j] is not None and fluent_history[i + 1][j] is None:
+                    fluent_history[i + 1][j] = fluent_history[i][j]
+
         return fluent_history
 
     def history_function(self, fluent: Fluent, time_point: int):
@@ -59,6 +66,13 @@ class Model:
                     fluents.append(Fluent(key.name, value))
 
         return fluents
+
+    def update_fluent_history(self, solution: dict, time: int):
+        # print(solution)
+        for key, value in solution.items():
+            for j in range(self.fluent_history.shape[1]):
+                if str(key) == self.fluent_history[time][j].name:
+                    self.fluent_history[time][j].value = value
 
     def __str__(self):
         string = ''

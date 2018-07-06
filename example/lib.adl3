@@ -1,5 +1,5 @@
-Load causes loaded during 2
-Load releases hidden during 1
+Load releases loaded during 2
+Load releases ~hidden during 1
 Shoot causes ~loaded during 1
-Shoot causes ~alive if ~hidden during 1
+Shoot causes ~alive if ~hidden & loaded during 1
 impossible Shoot if ~loaded

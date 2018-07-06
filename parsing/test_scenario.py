@@ -17,10 +17,10 @@ class ScenarioParserTestCase(unittest.TestCase):
         alive, loaded, hidden = sympy.symbols("alive,loaded,hidden")
         self.assertEqual(scenario.observations[0], Observation(
             begin_time=0,
-            condition=Condition(alive & ~loaded & ~hidden)))
+            condition=Condition(alive & ~loaded & hidden)))
         self.assertEqual(scenario.observations[1], Observation(
-            begin_time=1,
-            condition=Condition(~alive & loaded & hidden)))
+            begin_time=2,
+            condition=Condition(alive & ~loaded & ~hidden)))
 
         self.assertEqual(len(scenario.action_occurrences), 2)
         self.assertEqual(scenario.action_occurrences[0],

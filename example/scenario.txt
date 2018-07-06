@@ -1,6 +1,6 @@
 OBS:
-0 alive & ~loaded & ~hidden
-1 ~alive & loaded & hidden
+0 alive & ~loaded & hidden
+2 alive & ~loaded & ~hidden
 ACS:
 Load 1 2
 Shoot 3 1
