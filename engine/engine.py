@@ -26,7 +26,7 @@ class Engine:
         a. Find observations and actions occurring at specific time point t
         b. Loop though list of current models
             b2. Loop through list of actions occurring at time t
-                i. If action doesn't violate domain description ImpossibleAt and ImpossibleIf statements:
+                i. If action violates domain description ImpossibleAt and ImpossibleIf statements:
                     *. Go to step "b2" and check next action (skip the steps below)
                 ii. If action precondition is not satisfied:
                     *. Go to step "b2" and check next action (skip the steps below)
