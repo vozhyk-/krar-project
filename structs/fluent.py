@@ -5,3 +5,8 @@ class Fluent:
 
     def __str__(self):
         return self.name + " is " + str(self.value)
+
+    def __eq__(self, other):
+        if isinstance(other, Fluent):
+            return self.name == other.name and self.value == other.value
+        return False

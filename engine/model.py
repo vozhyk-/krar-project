@@ -13,16 +13,17 @@ from sympy.logic import boolalg
 class Model:
     def __init__(self, scenario: Scenario):
         # self.domain_description = domain_description
-        self.scenario = scenario
-        self.fluents = self.parse_initial_fluents()
+        # self.scenario = scenario
+        self.fluents = self.parse_initial_fluents(scenario)
         # self.consistent = False  # still to be checked later on
-        last_action = self.scenario.action_occurrences[-1]
+        acs = sorted(scenario.action_occurrences, key=lambda action: action.begin_time)
+        last_action = acs[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
-        self.fluent_history = self.initialize_history()
+        self.fluent_history = self.initialize_history(scenario)
 
-    def initialize_history(self) -> ndarray:
+    def initialize_history(self, scenario: Scenario) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
-        for observation in self.scenario.observations:
+        for observation in scenario.observations:
             for key, value in satisfiable(observation.condition.formula).items():
                 fluent = Fluent(key.name, value)
                 begin_time = observation.begin_time
@@ -58,12 +59,13 @@ class Model:
 
         return fluents_under_influence
 
-    def parse_initial_fluents(self):
+    def parse_initial_fluents(self, scenario: Scenario):
         fluents = []
-        for observation in self.scenario.observations:
+        for observation in scenario.observations:
             if observation.begin_time == 0:
                 for key, value in satisfiable(observation.condition.formula).items():
                     fluents.append(Fluent(key.name, value))
+                break
 
         return fluents
 
@@ -87,3 +89,8 @@ class Model:
                     string += ', '
             string += '\n'
         return string
+
+    def __eq__(self, other):
+        if isinstance(other, Model):
+            return (self.fluent_history == other.fluent_history).all()
+        return False

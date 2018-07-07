@@ -26,6 +26,7 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
     elif inconsistency_checker.is_consistent:
         # Inconsistency checker verified the scenario and domain description, so we can create our models
         engine = Engine(inconsistency_checker)
+        print('We found', len(engine.models), 'models:\n', engine.models)
     else:
         print('Queries:', queries)
 
