@@ -62,11 +62,10 @@ class Engine:
         for t in range(total_time):
             # Check OBS/ACS at time t and fork model accordingly
             # Only one action can be executed at a time
-
             print('At time', t, 'we have', len(self.models), 'models')
             new_models = []
             for i in range(len(self.models) - 1, -1, -1):
-                is_model_valid, action, statement = self.checker.validate_model2(self.models[i], t)
+                is_model_valid, action, statement = self.checker.validate_model(self.models[i], t)
                 if not is_model_valid:
                     print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
                     self.models.remove(self.models[i])

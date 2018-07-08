@@ -139,60 +139,10 @@ class InconsistencyChecker:
                 # print('Model:\n', m, '\n Is already in the list!')
         return new_list
 
-    # Returns a tuple of 2 elements, first is a bool that says whether or not model is valid
-    # Second element of tuple is valid action to be executed or None if it doesn't exists
-    def validate_model(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None]]:
-        action = None
-        current_fluents = model.fluent_history[time]
-        fluent_symbol_dict = dict()  # SympySymbol -> bool
-        # Convert state of fluents to sympy dict
-        # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
-        for fluent in current_fluents:
-            fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
-        expr = tuple(fluent_symbol_dict.keys())
-        expr_values = tuple(fluent_symbol_dict.values())
-        # print('time:', time, 'expr:', expr)
-        # print('time:', time, 'expr_values:', expr_values)
-        # Check observations
-        if time in self.observations_at_time_t:
-            for obs in self.observations_at_time_t[time]:
-                # https://stackoverflow.com/questions/42045906/typeerror-return-arrays-must-be-of-arraytype-using-lambdify-of-sympy-in-python
-                f = lambdify(expr, obs.condition.formula, modules={'And': all, 'Or': any})
-                evaluation = f(*expr_values)
-                print('(Observations) Expression:', expr, 'given values:', expr_values, 'in the formula:',
-                      obs.condition.formula, 'was evaluated to:',
-                      evaluation, 'at time:', time)
-                # Invalid model, so we don't even try to find an action for this time
-                if not evaluation:
-                    return False, None
-
-        # Look for a valid action to execute at this time
-        if time in self.actions_at_time_t:
-            action = self.actions_at_time_t[time]
-            # Check ImpossibleAt
-            if time in self.action_time_constraints_at_time_t:
-                if action.name in self.action_time_constraints_at_time_t[time]:
-                    print('action:', action, 'violates impossible_at at time:', time)
-                    return False, None
-            # Check ImpossibleIf statements
-            for impossible_if in self.action_formula_constraints:
-                if action.name == impossible_if.action:
-                    f = lambdify(expr, impossible_if.condition.formula, modules={'And': all, 'Or': any})
-                    evaluation = f(*expr_values)
-                    print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
-                          impossible_if.condition.formula,
-                          'was evaluated to:',
-                          evaluation, 'for action:', action.name, 'at time:', time)
-                    # Invalid model, so we don't even try to find an action for this time
-                    if evaluation:
-                        print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:', expr)
-                        return False, None
-        else:
-            # No action is executed at this time
-            return True, None
-        return True, action
-
-    def validate_model2(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None],  Union[Statement, None]]:
+    # Returns a tuple of 3 elements, first is a bool that says whether or not model is valid
+    # Second element of tuple is valid action to be executed (if it exists)
+    # Third element is the statement associated with the action returned as the 2nd argument
+    def validate_model(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None],  Union[Statement, None]]:
         current_statement = None
         current_action = None
         for t in self.actions_at_time_t.keys():
