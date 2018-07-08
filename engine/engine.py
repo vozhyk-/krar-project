@@ -1,7 +1,7 @@
 from engine.inconsistency_checker import InconsistencyChecker
 from engine.model import Model
 from sympy.logic import boolalg
-from structs.statements import ImpossibleAt, ImpossibleIf, Causes, Releases
+from structs.statements import ImpossibleAt, ImpossibleIf, Causes, Releases, Statement
 from structs.action_occurrence import ActionOccurrence
 from typing import List
 from copy import deepcopy
@@ -64,18 +64,16 @@ class Engine:
             # Only one action can be executed at a time
 
             print('At time', t, 'we have', len(self.models), 'models')
-            if t == 2:
-                for m in self.models:
-                    print(m)
             new_models = []
             for i in range(len(self.models) - 1, -1, -1):
-                is_model_valid, action = self.checker.validate_model(self.models[i], t)
+                is_model_valid, action, statement = self.checker.validate_model2(self.models[i], t)
                 if not is_model_valid:
                     print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
                     self.models.remove(self.models[i])
                 elif action is not None:
-                    new_models += self.execute_action(self.models[i], action)
+                    new_models += self.execute_action(self.models[i], action, statement)
             self.models += new_models
+            self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
 
@@ -97,12 +95,11 @@ class Engine:
             self.models.remove(model)
         return new_models
 
-    def execute_action(self, model: Model, action: ActionOccurrence) -> List[Model]:
+    def execute_action(self, model: Model, action: ActionOccurrence, statement: Statement) -> List[Model]:
         new_models = []
-        # TODO join causes statements by AND
-        for statement in self.checker.domain_desc.statements:
-            if isinstance(statement, Causes) and statement.action == action.name:
-                new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration, False)
-            elif isinstance(statement, Releases) and statement.action == action.name:
-                new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration, True)
+        if isinstance(statement, Causes):
+            new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration,
+                                          False)
+        elif isinstance(statement, Releases):
+            new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration, True)
         return new_models

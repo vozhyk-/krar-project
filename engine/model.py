@@ -84,14 +84,14 @@ class Model:
         return fluents
 
     def update_fluent_history(self, solution: dict, time: int):
-        print('Updating model with solution:', solution, 'at time:', time, 'shape:', self.fluent_history.shape)
         for key, value in solution.items():
             for j in range(self.fluent_history.shape[1]):
                 if str(key) == self.fluent_history[time][j].name:
-                    print('Setting row:', time, 'and col:', j, 'to:', value, 'fluent_history before modification:\n', self.fluent_history)
                     self.fluent_history[time][j].value = value
-                    print('Setting row:', time, 'and col:', j, 'to:', value, 'fluent_history AFTER modification:\n',
-                          self.fluent_history)
+        # Assume inertia law
+        for i in range(time + 1, self.fluent_history.shape[0]):
+            for j in range(self.fluent_history.shape[1]):
+                self.fluent_history[i][j] = deepcopy(self.fluent_history[i - 1][j])
 
     def __str__(self):
         string = ''

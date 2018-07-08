@@ -5,7 +5,7 @@ from sympy.logic.boolalg import Not, And, Or
 from structs.statements import Causes, Releases
 from engine.model import Model
 from typing import List, Union, Tuple
-from structs.statements import ImpossibleAt, ImpossibleIf
+from structs.statements import ImpossibleAt, ImpossibleIf, Statement
 from structs.action_occurrence import ActionOccurrence
 import sympy.parsing.sympy_parser as sympy_parser
 from sympy.utilities.lambdify import lambdify
@@ -191,3 +191,70 @@ class InconsistencyChecker:
             # No action is executed at this time
             return True, None
         return True, action
+
+    def validate_model2(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None],  Union[Statement, None]]:
+        current_statement = None
+        current_action = None
+        for t in self.actions_at_time_t.keys():
+            action = self.actions_at_time_t[t]
+            for statement in self.domain_desc.statements:
+                if isinstance(statement, (Causes, Releases)) and statement.action == action.name:
+                    if action.begin_time + statement.duration == time:
+                        # We found what statement is happening now
+                        current_statement = statement
+                        current_action = action
+
+        if current_action is None or current_statement is None:
+            return True, None, None
+
+        # Check ImpossibleAt
+        if current_action.begin_time in self.action_time_constraints_at_time_t:
+            if current_action.name in self.action_time_constraints_at_time_t[current_action.begin_time]:
+                print('action:', current_action, 'violates impossible_at at time:', current_action.begin_time)
+                return False, None, None
+
+        current_fluents = model.fluent_history[current_action.begin_time]
+        fluent_symbol_dict = dict()  # SympySymbol -> bool
+        # Convert state of fluents to sympy dict
+        # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
+        for fluent in current_fluents:
+            fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
+        expr = tuple(fluent_symbol_dict.keys())
+        expr_values = tuple(fluent_symbol_dict.values())
+        # Check ImpossibleIf statements
+        for impossible_if in self.action_formula_constraints:
+            if current_action.name == impossible_if.action:
+                f = lambdify(expr, impossible_if.condition.formula, modules={'And': all, 'Or': any})
+                evaluation = f(*expr_values)
+                print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
+                      impossible_if.condition.formula,
+                      'was evaluated to:',
+                      evaluation, 'for action:', action.name, 'at time:', time)
+                # Invalid model, so we don't even try to find an action for this time
+                if evaluation:
+                    print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:',
+                          expr)
+                    return False, None, None
+        return True, current_action, current_statement
+
+    def remove_bad_observations(self, models: List[Model], time: int):
+        for i in range(len(models) - 1, -1, -1):
+            current_fluents = models[i].fluent_history[time]
+            fluent_symbol_dict = dict()  # SympySymbol -> bool
+            # Convert state of fluents to sympy dict
+            # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
+            for fluent in current_fluents:
+                fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
+            expr = tuple(fluent_symbol_dict.keys())
+            expr_values = tuple(fluent_symbol_dict.values())
+            if time in self.observations_at_time_t:
+                for obs in self.observations_at_time_t[time]:
+                    # https://stackoverflow.com/questions/42045906/typeerror-return-arrays-must-be-of-arraytype-using-lambdify-of-sympy-in-python
+                    f = lambdify(expr, obs.condition.formula, modules={'And': all, 'Or': any})
+                    evaluation = f(*expr_values)
+                    print('(Observations) Expression:', expr, 'given values:', expr_values, 'in the formula:',
+                          obs.condition.formula, 'was evaluated to:',
+                          evaluation, 'at time:', time)
+                    # Invalid model, so we don't even try to find an action for this time
+                    if not evaluation:
+                        models.remove(models[i])
