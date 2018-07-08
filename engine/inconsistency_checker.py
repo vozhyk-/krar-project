@@ -142,7 +142,6 @@ class InconsistencyChecker:
     # Returns a tuple of 2 elements, first is a bool that says whether or not model is valid
     # Second element of tuple is valid action to be executed or None if it doesn't exists
     def validate_model(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None]]:
-        valid_model = True
         action = None
         current_fluents = model.fluent_history[time]
         fluent_symbol_dict = dict()  # SympySymbol -> bool
@@ -183,12 +182,12 @@ class InconsistencyChecker:
                     print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
                           impossible_if.condition.formula,
                           'was evaluated to:',
-                          evaluation, 'at time:', time)
+                          evaluation, 'for action:', action.name, 'at time:', time)
                     # Invalid model, so we don't even try to find an action for this time
-                    if not evaluation:
-                        # print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:', expr)
+                    if evaluation:
+                        print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:', expr)
                         return False, None
         else:
             # No action is executed at this time
-            return valid_model, None
-        return valid_model, action
+            return True, None
+        return True, action

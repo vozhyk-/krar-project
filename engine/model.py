@@ -8,6 +8,7 @@ import parsing.domain_description, parsing.scenario
 from sympy.logic.inference import satisfiable
 from numpy import ndarray
 from sympy.logic import boolalg
+from copy import deepcopy
 
 
 class Model:
@@ -23,7 +24,10 @@ class Model:
 
     def initialize_history(self, scenario: Scenario) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
-        for observation in scenario.observations:
+        sorted_observations = sorted(scenario.observations, key=lambda obs: obs.begin_time)
+        assert len(sorted_observations) > 0
+        '''
+        for observation in sorted_observations:
             for key, value in satisfiable(observation.condition.formula).items():
                 fluent = Fluent(key.name, value)
                 begin_time = observation.begin_time
@@ -33,11 +37,21 @@ class Model:
                         break
                     else:
                         continue
+        '''
+        for key, value in satisfiable(sorted_observations[0].condition.formula).items():
+            fluent = Fluent(key.name, value)
+            begin_time = sorted_observations[0].begin_time
+            for i in range(len(fluent_history[begin_time])):
+                if fluent_history[begin_time][i] is None:
+                    fluent_history[begin_time][i] = fluent
+                    break
+                else:
+                    continue
         # Assume inertia law
         for i in range(fluent_history.shape[0] - 1):
             for j in range(fluent_history.shape[1]):
                 if fluent_history[i][j] is not None and fluent_history[i + 1][j] is None:
-                    fluent_history[i + 1][j] = fluent_history[i][j]
+                    fluent_history[i + 1][j] = deepcopy(fluent_history[i][j])
 
         return fluent_history
 
@@ -70,11 +84,14 @@ class Model:
         return fluents
 
     def update_fluent_history(self, solution: dict, time: int):
-        # print(solution)
+        print('Updating model with solution:', solution, 'at time:', time, 'shape:', self.fluent_history.shape)
         for key, value in solution.items():
             for j in range(self.fluent_history.shape[1]):
                 if str(key) == self.fluent_history[time][j].name:
+                    print('Setting row:', time, 'and col:', j, 'to:', value, 'fluent_history before modification:\n', self.fluent_history)
                     self.fluent_history[time][j].value = value
+                    print('Setting row:', time, 'and col:', j, 'to:', value, 'fluent_history AFTER modification:\n',
+                          self.fluent_history)
 
     def __str__(self):
         string = ''
