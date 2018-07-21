@@ -38,8 +38,8 @@ class Engine:
                 v. If action CAN be executed and it is a RELEASES statement:
                     *. Execute the RELEASES action, so make a deepcopy of the model for all solutions
                      to the boolean formula of the action effect while keeping the original model   
-                b3. Loop through list of observations at time t 
-                (Note that this occurs AFTER executing the action affecting the current model and modifying the fluents)
+            b3. Loop through list of observations at time t 
+            (Note that this occurs AFTER executing the action affecting the current model and modifying the fluents)
                 i. If current state of fluents in this model at time t do not satisfy formula in observation
                     *. Remove this model from the list of models and go to step b (check next model)
     '''
