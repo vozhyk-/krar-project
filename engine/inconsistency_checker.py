@@ -139,10 +139,19 @@ class InconsistencyChecker:
                 # print('Model:\n', m, '\n Is already in the list!')
         return new_list
 
-    # Returns a tuple of 3 elements, first is a bool that says whether or not model is valid
+    # Returns
     # Second element of tuple is valid action to be executed (if it exists)
     # Third element is the statement associated with the action returned as the 2nd argument
     def validate_model(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None],  Union[Statement, None]]:
+        """
+        Firstly we find an action and its correlated statement that are affecting the model at time "time"
+        If an action is found, then it is validated against ImpossibleAt/ImpossibleIf statements
+        :param model: The model to be validated
+        :param time: The time at which we check/validate the model
+        :return: A tuple of 3 elements, first is a bool that says whether or not model is valid
+        second is the action that is affecting the model passed into the method, and the third is the EffectStatement
+        that is correlated with the action
+        """
         current_statement = None
         current_action = None
         for t in self.actions_at_time_t.keys():
@@ -153,7 +162,7 @@ class InconsistencyChecker:
                         # We found what statement is happening now
                         current_statement = statement
                         current_action = action
-
+        # If no action is affecting us now, assume model is valid
         if current_action is None or current_statement is None:
             return True, None, None
 
@@ -162,7 +171,7 @@ class InconsistencyChecker:
             if current_action.name in self.action_time_constraints_at_time_t[current_action.begin_time]:
                 print('action:', current_action, 'violates impossible_at at time:', current_action.begin_time)
                 return False, None, None
-
+        # Below we validate the action that was found against ImpossibleAt/ImpossibleIf
         current_fluents = model.fluent_history[current_action.begin_time]
         fluent_symbol_dict = dict()  # SympySymbol -> bool
         # Convert state of fluents to sympy dict
@@ -174,6 +183,8 @@ class InconsistencyChecker:
         # Check ImpossibleIf statements
         for impossible_if in self.action_formula_constraints:
             if current_action.name == impossible_if.action:
+                # Using the lambdify() method, we can evaluate a boolean formula given state of boolean variables
+                # There is no "eval()" method in sympy for solving boolean formulas
                 f = lambdify(expr, impossible_if.condition.formula, modules={'And': all, 'Or': any})
                 evaluation = f(*expr_values)
                 print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
@@ -188,6 +199,14 @@ class InconsistencyChecker:
         return True, current_action, current_statement
 
     def remove_bad_observations(self, models: List[Model], time: int):
+        """
+        This method is executed after forking new models. 
+        It may happen that a newly forked model violates an observation that we had at a given time,
+        if so we must remove it.
+        :param models: The list of models that will be checked for invalid state of fluents
+        :param time: The time at which the observations will be checked
+        :return: None
+        """
         for i in range(len(models) - 1, -1, -1):
             current_fluents = models[i].fluent_history[time]
             fluent_symbol_dict = dict()  # SympySymbol -> bool

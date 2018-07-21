@@ -24,11 +24,13 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
     if len(queries) == 0:
         print("The library and the scenario are valid.")
     elif inconsistency_checker.is_consistent:
-        # Inconsistency checker verified the scenario and domain description, so we can create our models
+        # Inconsistency checker verified the scenario and domain description, so now we can create our models
         engine = Engine(inconsistency_checker)
-        print('After the engine ran We found', len(engine.models), 'models:\n', engine.models)
+        print('After the engine ran We found', len(engine.models), 'model(s):\n', engine.models)
+        i = 0
         for model in engine.models:
-            print(model)
+            print('Final model:', i, '\n', model)
+            i += 1
     else:
         print('Queries:', queries)
 
