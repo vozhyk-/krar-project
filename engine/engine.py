@@ -36,11 +36,8 @@ class Engine:
                      to the boolean formula of the action effect
                      **. Remove the model that occurred at time k because it is no loner valid
                 v. If action CAN be executed and it is a RELEASES statement:
-                    *. Leave existing model unchanged,
-                     however we fork (create new copies of) models where formula holds at t+d          
-                NOTE: If the formulas holding in steps "iv" and "v" have more than one solution
-                (they contain logical or for example or an implication), then we
-                check all solutions using satisfiable() and fork the model where solution holds at time t+d
+                    *. Execute the RELEASES action, so make a deepcopy of the model for all solutions
+                     to the boolean formula of the action effect while keeping the original model   
                 b3. Loop through list of observations at time t 
                 (Note that this occurs AFTER executing the action affecting the current model and modifying the fluents)
                 i. If current state of fluents in this model at time t do not satisfy formula in observation
