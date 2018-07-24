@@ -31,6 +31,8 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
         for model in engine.models:
             print('Final model:', i, '\n', model)
             i += 1
+        for query in queries:
+            print('Query:', query, 'was evaluated to:', query.validate(engine.models))
     else:
         print('Queries:', queries)
 

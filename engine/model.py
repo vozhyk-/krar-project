@@ -1,14 +1,13 @@
-from structs.domain_description import DomainDescription
+
 from structs.scenario import Scenario
 from structs.fluent import Fluent
 from structs.action_occurrence import ActionOccurrence
-from structs.observation import Observation
-from typing import List
-import parsing.domain_description, parsing.scenario
+from typing import List, Tuple
 from sympy.logic.inference import satisfiable
 from numpy import ndarray
-from sympy.logic import boolalg
 from copy import deepcopy
+import sympy.parsing.sympy_parser as sympy_parser
+import sympy
 
 
 class Model:
@@ -92,6 +91,25 @@ class Model:
         for i in range(time + 1, self.fluent_history.shape[0]):
             for j in range(self.fluent_history.shape[1]):
                 self.fluent_history[i][j] = deepcopy(self.fluent_history[i - 1][j])
+
+    def get_symbol_values(self, time: int) -> Tuple[List[sympy.Symbol], List[bool]]:
+        """
+        Method converts a row of "Fluent" objects to a tuple of 2 lists 
+        The value of the sympy symbol can be true or false at a given time,
+        this helper method helps us evaluate fluents against a formula
+        :param time: The time at which the row of sympy symbols is taken
+        :return: A tuple of 2 lists, one list stores the sympy symbols
+        while the second stores the boolean values associated with them
+        """
+        current_fluents = self.fluent_history[time]
+        fluent_symbol_dict = dict()  # SympySymbol -> bool
+        # Convert state of fluents to sympy dict
+        # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
+        for fluent in current_fluents:
+            fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
+        expr = list(fluent_symbol_dict.keys())
+        expr_values = list(fluent_symbol_dict.values())
+        return expr, expr_values
 
     def __str__(self):
         string = ''

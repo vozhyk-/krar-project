@@ -4,11 +4,14 @@ from sympy.logic.inference import satisfiable
 from sympy.logic.boolalg import Not, And, Or
 from structs.statements import Causes, Releases
 from engine.model import Model
-from typing import List, Union, Tuple
-from structs.statements import ImpossibleAt, ImpossibleIf, Statement
+from typing import List, Union, Tuple, Dict, Optional
+from structs.statements import ImpossibleAt, ImpossibleIf, Statement, EffectStatement
 from structs.action_occurrence import ActionOccurrence
 import sympy.parsing.sympy_parser as sympy_parser
 from sympy.utilities.lambdify import lambdify
+from sympy.logic import boolalg
+from sympy import Symbol
+from structs.condition import Condition
 
 
 class InconsistencyChecker:
@@ -34,7 +37,9 @@ class InconsistencyChecker:
         # ImpossibleAt statements
         self.action_time_constraints_at_time_t = dict()  # Maps time: int -> List[str] (List of action names not executable at t)
         self.last_time = self.sorted_actions[-1].begin_time + self.sorted_actions[-1].duration + 1
+        self.joined_statements = dict()  # Stores the joined releases/causes statements that have same name, time, and duration
         self.initialize_data()
+        print('self.joined_statements:\n', self.joined_statements)
         # print(self.actions_at_time_t)
         # print(self.observations_at_time_t)
         # print(self.action_formula_constraints)
@@ -62,6 +67,24 @@ class InconsistencyChecker:
                 for action_name in impossible_at_action_names:
                     self.action_time_constraints_at_time_t[t].append(action_name)
 
+        for i in range(len(self.domain_desc.statements)):
+            statement = self.domain_desc.statements[i]
+            # print(statement)
+            # join action with its causes/releases effect
+            if isinstance(statement, (Causes, Releases)):
+                if statement.action not in self.joined_statements:
+                    self.joined_statements[statement.action] = [statement]
+                else:
+                    for j in range(len(self.joined_statements[statement.action])):
+                        print(self.joined_statements[statement.action])
+                        if self.joined_statements[statement.action][j].duration == statement.duration and isinstance(statement, Releases) and isinstance(self.joined_statements[statement.action][j], Releases) and self.joined_statements[statement.action][j].condition == statement.condition:
+                            self.joined_statements[statement.action][j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement, False)
+                        elif self.joined_statements[statement.action][j].duration == statement.duration and isinstance(statement, Causes) and isinstance(self.joined_statements[statement.action][j], Causes) and self.joined_statements[statement.action][j].condition == statement.condition:
+                            self.joined_statements[statement.action][j] = self.joined_statements[statement.action][j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement, True)
+                        else:
+                            self.joined_statements[statement.action].append(statement)
+
+
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
             if (self.sorted_actions[i].begin_time +
@@ -71,6 +94,8 @@ class InconsistencyChecker:
                 self.is_consistent = False
                 break
 
+    # TODO change this method, right now it ignores action durations
+    # TODO and whether or not statements are Releases or Causes statements, we need to rework it
     def check_for_contradictory_domain_desc(self):
         action_dict = dict()  # Maps action name -> Conditions joined by and
         for i in range(len(self.domain_desc.statements)):
@@ -139,31 +164,75 @@ class InconsistencyChecker:
                 # print('Model:\n', m, '\n Is already in the list!')
         return new_list
 
-    # Returns
-    # Second element of tuple is valid action to be executed (if it exists)
-    # Third element is the statement associated with the action returned as the 2nd argument
-    def validate_model(self, model: Model, time: int) -> Tuple[bool, Union[ActionOccurrence, None],  Union[Statement, None]]:
+    def validate_model(self, model: Model, time: int) -> Tuple[bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]]]:
         """
-        Firstly we find an action and its correlated statement that are affecting the model at time "time"
+        Firstly we find an action,
+        then we look in the domain description for Releases/Causes statements that have an effect at this specific time.
+        We then join releases/causes statements together into 1 big Releases statement and 1 big Causes statement
+        Then we return the statements that are CAUSED at this time, and the statements that are RELEASED at this time
         If an action is found, then it is validated against ImpossibleAt/ImpossibleIf statements
         :param model: The model to be validated
         :param time: The time at which we check/validate the model
         :return: A tuple of 3 elements, first is a bool that says whether or not model is valid
-        second is the action that is affecting the model passed into the method, and the third is the EffectStatement
+        second is the action that is affecting the model passed into the method, and the third either None (if no statements associated with action were found)
+        or a dict that contains the keys "releases" and the string "causes", with the value storing their respective Releases/Causes statement
         that is correlated with the action
         """
-        current_statement = None
+        current_statements = {'releases': None, 'causes': None}
         current_action = None
+        expr = None
+        expr_values = None
         for t in self.actions_at_time_t.keys():
             action = self.actions_at_time_t[t]
-            for statement in self.domain_desc.statements:
-                if isinstance(statement, (Causes, Releases)) and statement.action == action.name:
-                    if action.begin_time + statement.duration == time:
-                        # We found what statement is happening now
-                        current_statement = statement
-                        current_action = action
+            for statement in self.joined_statements[action.name]:
+                if statement.action == action.name and action.begin_time + statement.duration == time:
+                    evaluation = None
+                    current_action = action
+                    if expr is None or expr_values is None:
+                        # We found an ActionOccurrence, let's get the symbol values in the model at the time it occurred
+                        # So we can evaluate action preconditions against them
+                        expr, expr_values = model.get_symbol_values(current_action.begin_time)
+                    if isinstance(statement.condition, bool):
+                        # By default EffectStatements have a bool value for condition, this if statement handles that
+                        evaluation = statement.condition
+                    else:
+                        # Our statement in the domain description has a precondition, validate it against our model
+                        evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
+                    if evaluation and isinstance(statement, Releases):
+                        # Our statement precondition holds, so we add it to the returned statements
+                        if current_statements['releases'] is None:
+                            current_statements['releases'] = statement
+                        else:
+                            # We already have a releases statement, so join its effect with the existing one
+                            # This case handles the following scenario:
+                            # Load releases ~hidden in 2
+                            # Load releases loaded in 2
+                            # Both statements are joined into 1 larger one: Load releases ~hidden & loaded in 2
+                            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'], statement, False)
+                    # The same happens to causes statements...
+                    elif evaluation and isinstance(statement, Causes):
+                        if current_statements['causes'] is None:
+                            current_statements['causes'] = statement
+                        else:
+                            current_statements['causes'] = self.join_statement_by_and(current_statements['causes'], statement, True)
+
+            if current_action is not None:
+                # Only 1 action can affect the model at a time, so if we found one then break the loop
+                break
+        if current_statements['causes'] is not None and current_statements['releases'] is not None:
+            # Since at this time the model is affected by releases AND causes statements...
+            # we must join the causes/releases effect by and into 1 releases effect.
+            # This is because the causes statements will ALWAYS occur, and the releases effect MAY occur
+            # Example: imagine we have the following 2 statements in our DD:
+            # Load causes loaded in 1
+            # Load releases ~hidden in 1
+            # What will happen? The fluent "loaded" will ALWAYS hold in the new model because it is CAUSED
+            # The fluent "~hidden" may or may not hold because it is RELEASED. So we create a new releases statement:
+            # "Load releases loaded & ~hidden", now our engine will fork models where "loaded & ~hidden"
+            # may or may not hold, but "loaded" will always hold because we have a causes statement for it
+            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'], current_statements['causes'], False)
         # If no action is affecting us now, assume model is valid
-        if current_action is None or current_statement is None:
+        if current_action is None:
             return True, None, None
 
         # Check ImpossibleAt
@@ -171,59 +240,63 @@ class InconsistencyChecker:
             if current_action.name in self.action_time_constraints_at_time_t[current_action.begin_time]:
                 print('action:', current_action, 'violates impossible_at at time:', current_action.begin_time)
                 return False, None, None
-        # Below we validate the action that was found against ImpossibleAt/ImpossibleIf
-        current_fluents = model.fluent_history[current_action.begin_time]
-        fluent_symbol_dict = dict()  # SympySymbol -> bool
-        # Convert state of fluents to sympy dict
-        # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
-        for fluent in current_fluents:
-            fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
-        expr = tuple(fluent_symbol_dict.keys())
-        expr_values = tuple(fluent_symbol_dict.values())
+
         # Check ImpossibleIf statements
         for impossible_if in self.action_formula_constraints:
             if current_action.name == impossible_if.action:
-                # Using the lambdify() method, we can evaluate a boolean formula given state of boolean variables
-                # There is no "eval()" method in sympy for solving boolean formulas
-                f = lambdify(expr, impossible_if.condition.formula, modules={'And': all, 'Or': any})
-                evaluation = f(*expr_values)
+                evaluation = self.evaluate(expr, expr_values, impossible_if.condition.formula)
                 print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
                       impossible_if.condition.formula,
                       'was evaluated to:',
-                      evaluation, 'for action:', action.name, 'at time:', time)
+                      evaluation, 'for action:', current_action.name, 'at time:', time)
                 # Invalid model, so we don't even try to find an action for this time
                 if evaluation:
-                    print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:',
-                          expr)
+                    print('action:', current_action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:',
+                          expr, 'expr_values:', expr_values)
                     return False, None, None
-        return True, current_action, current_statement
+        return True, current_action, current_statements
 
     def remove_bad_observations(self, models: List[Model], time: int):
         """
         This method is executed after forking new models. 
         It may happen that a newly forked model violates an observation that we had at a given time,
         if so we must remove it.
-        :param models: The list of models that will be checked for invalid state of fluents
+        :param models: The list of models that will be checked for invalid state of fluents,
+        the models it stores may be removed. 
         :param time: The time at which the observations will be checked
         :return: None
         """
         for i in range(len(models) - 1, -1, -1):
-            current_fluents = models[i].fluent_history[time]
-            fluent_symbol_dict = dict()  # SympySymbol -> bool
-            # Convert state of fluents to sympy dict
-            # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python
-            for fluent in current_fluents:
-                fluent_symbol_dict[sympy_parser.parse_expr(fluent.name)] = fluent.value
-            expr = tuple(fluent_symbol_dict.keys())
-            expr_values = tuple(fluent_symbol_dict.values())
+            expr, expr_values = models[i].get_symbol_values(time)
             if time in self.observations_at_time_t:
                 for obs in self.observations_at_time_t[time]:
-                    # https://stackoverflow.com/questions/42045906/typeerror-return-arrays-must-be-of-arraytype-using-lambdify-of-sympy-in-python
-                    f = lambdify(expr, obs.condition.formula, modules={'And': all, 'Or': any})
-                    evaluation = f(*expr_values)
+                    evaluation = self.evaluate(expr, expr_values, obs.condition.formula)
                     print('(Observations) Expression:', expr, 'given values:', expr_values, 'in the formula:',
                           obs.condition.formula, 'was evaluated to:',
                           evaluation, 'at time:', time)
                     # Invalid model, so we don't even try to find an action for this time
                     if not evaluation:
                         models.remove(models[i])
+
+    @staticmethod
+    def evaluate(symbols: List[Symbol], symbol_values: List[bool], formula: boolalg.Boolean) -> bool:
+        """
+        Methods evaluates a logical (boolean formula) given the True/False value of each symbol
+        :param symbols: A list of sympy symbols to be checked in the formula.
+        Warning: order corresponds to order of "symbol_values"! The value of symbols[2] is symbol_values[2]
+        and len(symbols) == len(symbol_values)
+        :param symbol_values: The True/False values associated with the list of symbols
+        :param formula: The formula that will be evaluated given the symbols with their values
+        :return: True if formula is satisfied, False otherwise
+        """
+        # Using the lambdify() method, we can evaluate a boolean formula given state of boolean variables
+        # There is no "eval()" method in sympy for solving boolean formulas
+        # https://stackoverflow.com/questions/42045906/typeerror-return-arrays-must-be-of-arraytype-using-lambdify-of-sympy-in-python
+        f = lambdify(symbols, formula, modules={'And': all, 'Or': any})
+        return f(*symbol_values)
+
+    def join_statement_by_and(self, statement1: Statement, statement2: Statement, is_causes: bool) -> Statement:
+        if is_causes:
+            return Causes(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)
+        else:
+            return Releases(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)

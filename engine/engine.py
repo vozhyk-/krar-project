@@ -1,9 +1,9 @@
 from engine.inconsistency_checker import InconsistencyChecker
 from engine.model import Model
 from sympy.logic import boolalg
-from structs.statements import Causes, Releases, Statement
+from structs.statements import Causes, Releases, Statement, EffectStatement
 from structs.action_occurrence import ActionOccurrence
-from typing import List
+from typing import List, Dict, Optional
 from copy import deepcopy
 from sympy.logic.inference import satisfiable
 
@@ -66,12 +66,12 @@ class Engine:
             print('At time', t, 'we have', len(self.models), 'models')
             new_models = []
             for i in range(len(self.models) - 1, -1, -1):
-                is_model_valid, action, statement = self.checker.validate_model(self.models[i], t)
+                is_model_valid, action, statements = self.checker.validate_model(self.models[i], t)
                 if not is_model_valid:
                     print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
                     self.models.remove(self.models[i])
                 elif action is not None:
-                    new_models += self.execute_action(self.models[i], action, statement)
+                    new_models += self.execute_action(self.models[i], action, statements)
             self.models += new_models
             # After forking the new models,
             # we can now check if some of our observations invalidate the newly forked models
@@ -100,25 +100,25 @@ class Engine:
             new_model.update_fluent_history(s, time)
             new_models.append(new_model)
 
-        if not is_releases_statement:
+        if not is_releases_statement and model in self.models:
             self.models.remove(model)
 
         return new_models
 
-    def execute_action(self, model: Model, action: ActionOccurrence, statement: Statement) -> List[Model]:
+    def execute_action(self, model: Model, action: ActionOccurrence, statements: Dict[str, EffectStatement]) -> List[Model]:
         """
         We take an action occurrence (from a scenario) and the EffectStatement that is correlated with it,
         then we attempt to fork models based on the statement's boolean formula
         :param model: The model in which we wish to execute the given action
         :param action: The action occurrence which is affecting the model at the current time
-        :param statement: An instance of an EffectStatement that is correlated with the action occurrence
+        :param statements: A dict that contains 2 keys 'releases' and 'causes'
+        storing the Releases and Causes statement affecting the model at this time
         :return: The list of models that has been forked
         """
         new_models = []
-        if isinstance(statement, Causes):
-            new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration,
-                                          False)
-        elif isinstance(statement, Releases):
-            new_models += self.fork_model(model, statement.effect.formula, action.begin_time + statement.duration, True)
+        if statements['releases'] is not None:
+            new_models += self.fork_model(model, statements['releases'].effect.formula, action.begin_time + statements['releases'].duration, True)
+        if statements['causes'] is not None:
+            new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, False)
 
         return new_models
