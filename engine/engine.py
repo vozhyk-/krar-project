@@ -6,17 +6,20 @@ from structs.action_occurrence import ActionOccurrence
 from typing import List, Dict, Optional
 from copy import deepcopy
 from sympy.logic.inference import satisfiable
+from engine.preprocessor import Preprocessor
+from structs.scenario import Scenario
+from structs.domain_description import DomainDescription
+import parsing.scenario
+import parsing.domain_description
+import parsing.query
 
 
 class Engine:
-    def __init__(self, checker: InconsistencyChecker):
-        """
-        :param checker: An instance of the InconsistencyChecker that will validate models,
-        and perform helper tasks such as removing duplicate models
-        """
-        self.checker = checker
+    def __init__(self):
+
+        self.checker = None
         self.models = []
-        self.run()
+        # self.run()
     '''
     //////////////////////////////
     //////////ALGORITHM///////////
@@ -44,11 +47,22 @@ class Engine:
                     *. Remove this model from the list of models and go to step b (check next model)
     '''
 
-    def run(self):
+    def run(self, scenario: Scenario, domain_desc: DomainDescription):
         """
         The most important method of the Engine class. It runs the algorithm described above
         and it creates a list of all valid models and stores them in the "self.models" class member
+        :param scenario: Domain description that will be used for running the model
+        :param domain_desc: 
+        :return: True if method was successful (data is consistent) False otherwise
         """
+        prec = Preprocessor()
+        unique_domain_desc, unique_scenario = prec.remove_duplicates(domain_desc, scenario)
+        # After pre-processing the domain desc and scenario, pass it to the inconsistency_checker
+        self.checker = InconsistencyChecker(unique_domain_desc, unique_scenario)
+        if not self.checker.is_consistent:
+            print('in Model.run(): InconsistencyChecker claims scenario and/or domain description is invalid,'
+                  ' cannot continue!')
+            return False
         # Create initial model which corresponds to the initial state
         initial_model = Model(self.checker.valid_scenario)
         # We may have more than 1 initial model
@@ -78,6 +92,8 @@ class Engine:
             self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
+
+        return True
 
     def fork_model(self, model: Model, formula: boolalg.Boolean, time: int, is_releases_statement: bool = False) -> \
             List[Model]:

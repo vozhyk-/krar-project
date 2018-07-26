@@ -12,29 +12,23 @@ import parsing.query
 
 
 def main(library_file: str, scenario_file: str, query_file: str = None):
-    structure = LanguageStructure(library_file)
+    structure = LanguageStructure(library_file)  # What is this class for lol?
     scenario = parsing.scenario.parse_file(scenario_file)
     domain_desc = parsing.domain_description.parse_file(library_file)
     queries = parsing.query.parse_file(query_file)
-    prec = Preprocessor()
-    unique_domain_desc, unique_scenario = prec.remove_duplicates(domain_desc, scenario)
-    # After pre-processing the domain desc and scenario, pass it to the inconsistency_checker
-    inconsistency_checker = InconsistencyChecker(unique_domain_desc, unique_scenario)
+    engine = Engine()
 
     if len(queries) == 0:
         print("The library and the scenario are valid.")
-    elif inconsistency_checker.is_consistent:
-        # Inconsistency checker verified the scenario and domain description, so now we can create our models
-        engine = Engine(inconsistency_checker)
-        print('After the engine ran We found', len(engine.models), 'model(s):\n', engine.models)
+
+    if engine.run(scenario=scenario, domain_desc=domain_desc):
+        print('After the engine ran We found', len(engine.models))
         i = 0
         for model in engine.models:
             print('Final model:', i, '\n', model)
             i += 1
         for query in queries:
             print('Query:', query, 'was evaluated to:', query.validate(engine.models))
-    else:
-        print('Queries:', queries)
 
 
 if __name__ == '__main__':
