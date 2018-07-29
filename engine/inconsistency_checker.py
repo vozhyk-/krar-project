@@ -84,7 +84,6 @@ class InconsistencyChecker:
                         else:
                             self.joined_statements[statement.action].append(statement)
 
-
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
             if (self.sorted_actions[i].begin_time +
@@ -219,6 +218,11 @@ class InconsistencyChecker:
             if current_action is not None:
                 # Only 1 action can affect the model at a time, so if we found one then break the loop
                 break
+                # If no action is affecting us now, assume model is valid
+
+        if current_action is None:
+            return True, None, None
+
         if current_statements['causes'] is not None and current_statements['releases'] is not None:
             # Since at this time the model is affected by releases AND causes statements...
             # we must join the causes/releases effect by and into 1 releases effect.
@@ -231,29 +235,11 @@ class InconsistencyChecker:
             # "Load releases loaded & ~hidden", now our engine will fork models where "loaded & ~hidden"
             # may or may not hold, but "loaded" will always hold because we have a causes statement for it
             current_statements['releases'] = self.join_statement_by_and(current_statements['releases'], current_statements['causes'], False)
-        # If no action is affecting us now, assume model is valid
-        if current_action is None:
-            return True, None, None
 
-        # Check ImpossibleAt
-        if current_action.begin_time in self.action_time_constraints_at_time_t:
-            if current_action.name in self.action_time_constraints_at_time_t[current_action.begin_time]:
-                print('action:', current_action, 'violates impossible_at at time:', current_action.begin_time)
-                return False, None, None
+        # Check ImpossibleAt/ImpossibleIf
+        if self.action_impossible_at(current_action) or self.action_impossible_if(current_action, expr, expr_values):
+            return False, None, None
 
-        # Check ImpossibleIf statements
-        for impossible_if in self.action_formula_constraints:
-            if current_action.name == impossible_if.action:
-                evaluation = self.evaluate(expr, expr_values, impossible_if.condition.formula)
-                print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
-                      impossible_if.condition.formula,
-                      'was evaluated to:',
-                      evaluation, 'for action:', current_action.name, 'at time:', time)
-                # Invalid model, so we don't even try to find an action for this time
-                if evaluation:
-                    print('action:', current_action, 'violates impossible_if:', impossible_if, 'at time:', time, 'expr:',
-                          expr, 'expr_values:', expr_values)
-                    return False, None, None
         return True, current_action, current_statements
 
     def remove_bad_observations(self, models: List[Model], time: int):
@@ -300,3 +286,38 @@ class InconsistencyChecker:
             return Causes(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)
         else:
             return Releases(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)
+
+    def action_impossible_at(self, action: ActionOccurrence) -> bool:
+        """
+        :param action: Action to be validated against ImpossibleAt statements
+        :return: True if action cannot be executed at the given time, False otherwise
+        """
+        if action.begin_time in self.action_time_constraints_at_time_t:
+            if action.name in self.action_time_constraints_at_time_t[action.begin_time]:
+                print('action:', action, 'violates impossible_at at time:', action.begin_time)
+                return True
+        return False
+
+    def action_impossible_if(self, action: ActionOccurrence, expr: List[Symbol], expr_values: List[bool]) -> bool:
+        """
+        Method takes and action, and sees if the some ImpossibleIf holds for it
+        :param action: The action to be checked
+        :param expr: The expression that holds in the model at the time of checking the ImpossibleIf (state of fluents)
+        For example expr can be [loaded, hidden] and expr_values [True, False] that corresponds to the statement loaded & ~hidden
+        :param expr_values: The corresponding True/False values of the symbols in expr
+        :return: True if action execution is impossible due to ImpossibleIf holding, False otherwise
+        """
+
+        for impossible_if in self.action_formula_constraints:
+            if action.name == impossible_if.action:
+                evaluation = self.evaluate(expr, expr_values, impossible_if.condition.formula)
+                print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
+                      impossible_if.condition.formula,
+                      'was evaluated to:',
+                      evaluation, 'for action:', action.name, 'at time:', action.begin_time)
+                # Invalid model, so we don't even try to find an action for this time
+                if evaluation:
+                    print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', action.begin_time, 'expr:',
+                          expr, 'expr_values:', expr_values)
+                    return True
+        return False
