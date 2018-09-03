@@ -77,7 +77,6 @@ class Engine:
         for t in range(total_time):
             # Check OBS/ACS at time t and fork model accordingly
             # Only one action can be executed at a time
-            print('At time', t, 'we have', len(self.models), 'models')
             new_models = []
             for i in range(len(self.models) - 1, -1, -1):
                 is_model_valid, action, statements = self.checker.validate_model(self.models[i], t)
@@ -92,6 +91,7 @@ class Engine:
             self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
+            print('At time', t, 'we have', len(self.models), 'models')
 
         return True
 
