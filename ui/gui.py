@@ -1,46 +1,62 @@
 import tkinter as tk
+import sys
 
 
-class Gui:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("ADL3 Action Language with Durations")
-        self.root.geometry("650x650")
+class Gui(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.pack()
+        self.create_widgets()
 
-        main_frame = tk.Frame(self.root)
-        engine_frame = tk.Frame(main_frame)
+    def create_widgets(self):
+        self.master.title("ADL3 Action Language with Durations")
+        self.master.geometry("650x650")
 
-        scenario_frame = tk.Frame(engine_frame)
-        scenario_label = tk.Label(scenario_frame, text="Input Scenario").pack()
-        self.scenario_text_box = tk.Text(scenario_frame, height="5").pack()
-        scenario_frame.pack()
+        self.scenario_label = tk.Label(self, text="Input Scenario").pack()
+        self.scenario_text_box = tk.Text(self, height="5")
+        self.scenario_text_box.pack()
 
-        domain_frame = tk.Frame(engine_frame)
-        domain_label = tk.Label(domain_frame, text="Input Domain Description").pack()
-        self.domain_text_box = tk.Text(domain_frame, height="5").pack()
-        domain_frame.pack()
+        self.domain_label = tk.Label(self, text="Input Domain Description").pack()
+        self.domain_text_box = tk.Text(self, height="5")
+        self.domain_text_box.pack()
 
-        engine_init_button = tk.Button(engine_frame, text="Initialise the Engine").pack()
+        self.engine_init_button = tk.Button(self, text="Initialise the Engine", command=self.init_engine).pack()
 
-        query_frame = tk.Frame(main_frame)
-        query_label = tk.Label(query_frame, text="Input Query").pack()
-        self.query_text_box = tk.Text(query_frame, height="5").pack()
-        query_test_button = tk.Button(query_frame, text="Test the Query").pack()
+        self.query_label = tk.Label(self, text="Input Query").pack()
+        self.query_text_box = tk.Text(self, height="5")
+        self.query_text_box.pack()
+        self.query_test_button = tk.Button(self, text="Test the Query", command=self.test_query).pack()
 
-        output_label = tk.Label(query_frame, text="Output").pack()
-        self.output_textbox = tk.Text(query_frame, height="10")
+        self.output_label = tk.Label(self, text="Output").pack()
+        self.output_textbox = tk.Text(self, height="10", state="disabled")
+
+        sys.stdout = StdRedirector(self.output_textbox)
+        sys.stderr = StdRedirector(self.output_textbox)
+
         self.output_textbox.pack()
 
-        engine_frame.pack()
-        main_frame.pack()
-        query_frame.pack()
+    def retrieve_content(self, text_widget: tk.Text):
+        content = text_widget.get("1.0", tk.END)
+        return str(content)
 
-        self.root.mainloop()
+    def init_engine(self):
+        print("Engine Initialising")
 
-    def print(self, text: str):
-        self.output_textbox.insert(tk.END, text)
-
-
-gui = Gui()
+    def test_query(self):
+        print("Testing Query")
 
 
+class StdRedirector(object):
+    def __init__(self, text_widget):
+        self.text_space = text_widget
+
+    def write(self, string):
+        self.text_space.config(state=tk.NORMAL)
+        self.text_space.insert("end", string)
+        self.text_space.see("end")
+        self.text_space.config(state=tk.DISABLED)
+
+
+root = tk.Tk()
+gui = Gui(master=root)
+gui.mainloop()
