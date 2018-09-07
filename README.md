@@ -12,6 +12,10 @@
 
 Run the GUI with:
 ```
+exec/gui.exe
+```
+or
+```
 PYTHONPATH="." python3.6 ./ui/gui.py
 ```
 
