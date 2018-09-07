@@ -24,7 +24,8 @@ class Preprocessor:
     def is_unique(self, unique_stat: List[Statement], statement: Statement):
         if isinstance(statement, EffectStatement):
             for j in range(len(unique_stat)):
-                if ((statement.action == unique_stat[j].action)
+                if (isinstance(unique_stat[j], EffectStatement)
+                and (statement.action == unique_stat[j].action)
                 and (statement.duration == unique_stat[j].duration)
                 and (statement.condition == unique_stat[j].condition)
                 and (statement.effect == unique_stat[j].effect)):
@@ -32,13 +33,15 @@ class Preprocessor:
 
         if isinstance(statement, ImpossibleIf):
             for j in range(len(unique_stat)):
-                if ((statement.action == unique_stat[j].action)
+                if (isinstance(unique_stat[j], ImpossibleIf)
+                and (statement.action == unique_stat[j].action)
                 and (statement.condition == unique_stat[j].condition)):
                     return False
 
         if isinstance(statement, ImpossibleAt):
             for j in range(len(unique_stat)):
-                if ((statement.action == unique_stat[j].action)
+                if (isinstance(unique_stat[j], ImpossibleAt)
+                and (statement.action == unique_stat[j].action)
                 and (statement.time == unique_stat[j].time)):
                     return False
         return True
