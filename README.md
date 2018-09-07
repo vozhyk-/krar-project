@@ -1,5 +1,13 @@
 # ADL3
 
+## Authors
+
+- Witaut Bajaryn: Parsing the domain description and scenarios.
+- Jakub Karaszkiewicz: Design documentation; examples and counter-examples.
+- Filip Matracki: The engine; model consistency validation; query parsing and execution.
+- Ivan Matyazh: Testing the engine and preprocessor implementation; bug fixing.
+- Fardeen Mohammed: Data structures and the GUI.
+
 ## Example GUI usage
 
 Run the GUI with:
