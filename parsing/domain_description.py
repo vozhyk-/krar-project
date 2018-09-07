@@ -9,3 +9,11 @@ def parse_file(file: str) -> DomainDescription:
     statements = [parsing.statement.parse(x) for x in lines]
 
     return DomainDescription(statements)
+
+
+def parse_text(text: str) -> DomainDescription:
+    lines = text.split('\n')
+    lines.remove('')
+    statements = [parsing.statement.parse(x) for x in lines]
+
+    return DomainDescription(statements)

@@ -27,8 +27,8 @@ class InconsistencyChecker:
         self.check_for_invalid_initial_state()
         if self.is_consistent:
             self.valid_scenario = Scenario(self.sorted_observations, self.sorted_actions)
-            print('self.valid_scenario.action_occurrences', self.valid_scenario.action_occurrences)
-            print('self.valid_scenario.observations:', self.valid_scenario.observations)
+            # print('self.valid_scenario.action_occurrences', self.valid_scenario.action_occurrences)
+            # print('self.valid_scenario.observations:', self.valid_scenario.observations)
         self.actions_at_time_t = dict()  # Maps time: int -> action_occurrence
         # Observations from domain description
         self.observations_at_time_t = dict()  # Maps time: int -> List[Observation]
@@ -39,7 +39,7 @@ class InconsistencyChecker:
         self.last_time = self.sorted_actions[-1].begin_time + self.sorted_actions[-1].duration + 1
         self.joined_statements = dict()  # Stores the joined releases/causes statements that have same name, time, and duration
         self.initialize_data()
-        print('self.joined_statements:\n', self.joined_statements)
+        # print('self.joined_statements:\n', self.joined_statements)
         # print(self.actions_at_time_t)
         # print(self.observations_at_time_t)
         # print(self.action_formula_constraints)
@@ -76,20 +76,29 @@ class InconsistencyChecker:
                     self.joined_statements[statement.action] = [statement]
                 else:
                     for j in range(len(self.joined_statements[statement.action])):
-                        print(self.joined_statements[statement.action])
-                        if self.joined_statements[statement.action][j].duration == statement.duration and isinstance(statement, Releases) and isinstance(self.joined_statements[statement.action][j], Releases) and self.joined_statements[statement.action][j].condition == statement.condition:
-                            self.joined_statements[statement.action][j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement, False)
-                        elif self.joined_statements[statement.action][j].duration == statement.duration and isinstance(statement, Causes) and isinstance(self.joined_statements[statement.action][j], Causes) and self.joined_statements[statement.action][j].condition == statement.condition:
-                            self.joined_statements[statement.action][j] = self.joined_statements[statement.action][j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement, True)
+                        # print(self.joined_statements[statement.action])
+                        if self.joined_statements[statement.action][j].duration == statement.duration and isinstance(
+                                statement, Releases) and isinstance(self.joined_statements[statement.action][j],
+                                                                    Releases) and \
+                                self.joined_statements[statement.action][j].condition == statement.condition:
+                            self.joined_statements[statement.action][j] = self.join_statement_by_and(
+                                self.joined_statements[statement.action][j], statement, False)
+                        elif self.joined_statements[statement.action][j].duration == statement.duration and isinstance(
+                                statement, Causes) and isinstance(self.joined_statements[statement.action][j],
+                                                                  Causes) and self.joined_statements[statement.action][
+                            j].condition == statement.condition:
+                            self.joined_statements[statement.action][j] = self.joined_statements[statement.action][
+                                j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement,
+                                                                True)
                         else:
                             self.joined_statements[statement.action].append(statement)
 
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
             if (self.sorted_actions[i].begin_time +
-                    self.sorted_actions[i].duration) > self.sorted_actions[i + 1].begin_time:
-                print('Overlapping action found, action name:', self.sorted_actions[i].name, 'overlaps with action:',
-                      self.sorted_actions[i + 1].name)
+                self.sorted_actions[i].duration) > self.sorted_actions[i + 1].begin_time:
+                # print('Overlapping action found, action name:', self.sorted_actions[i].name, 'overlaps with action:',
+                #       self.sorted_actions[i + 1].name)
                 self.is_consistent = False
                 break
 
@@ -108,7 +117,7 @@ class InconsistencyChecker:
 
         for action_name, action_cond in action_dict.items():
             if not satisfiable(action_cond):
-                print('action_cond:', action_cond, 'is not satisfiable')
+                # print('action_cond:', action_cond, 'is not satisfiable')
                 self.is_consistent = False
                 break
 
@@ -151,7 +160,7 @@ class InconsistencyChecker:
                 for fluent_name, fluent_val in satisfiable(self.sorted_observations[i].condition.formula).items():
                     if fluent_name not in initial_fluents:
                         self.is_consistent = False
-                        print('Fluent:', fluent_name, 'was not defined in the initial state!')
+                        # print('Fluent:', fluent_name, 'was not defined in the initial state!')
 
     def remove_duplicate_models(self, models: List[Model]) -> List[Model]:
         new_list = []
@@ -163,7 +172,8 @@ class InconsistencyChecker:
                 # print('Model:\n', m, '\n Is already in the list!')
         return new_list
 
-    def validate_model(self, model: Model, time: int) -> Tuple[bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]]]:
+    def validate_model(self, model: Model, time: int) -> Tuple[
+        bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]]]:
         """
         Firstly we find an action,
         then we look in the domain description for Releases/Causes statements that have an effect at this specific time.
@@ -207,13 +217,15 @@ class InconsistencyChecker:
                             # Load releases ~hidden in 2
                             # Load releases loaded in 2
                             # Both statements are joined into 1 larger one: Load releases ~hidden & loaded in 2
-                            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'], statement, False)
+                            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'],
+                                                                                        statement, False)
                     # The same happens to causes statements...
                     elif evaluation and isinstance(statement, Causes):
                         if current_statements['causes'] is None:
                             current_statements['causes'] = statement
                         else:
-                            current_statements['causes'] = self.join_statement_by_and(current_statements['causes'], statement, True)
+                            current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
+                                                                                      statement, True)
 
             if current_action is not None:
                 # Only 1 action can affect the model at a time, so if we found one then break the loop
@@ -234,7 +246,8 @@ class InconsistencyChecker:
             # The fluent "~hidden" may or may not hold because it is RELEASED. So we create a new releases statement:
             # "Load releases loaded & ~hidden", now our engine will fork models where "loaded & ~hidden"
             # may or may not hold, but "loaded" will always hold because we have a causes statement for it
-            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'], current_statements['causes'], False)
+            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'],
+                                                                        current_statements['causes'], False)
 
         # Check ImpossibleAt/ImpossibleIf
         if self.action_impossible_at(current_action) or self.action_impossible_if(current_action, expr, expr_values):
@@ -257,9 +270,9 @@ class InconsistencyChecker:
             if time in self.observations_at_time_t:
                 for obs in self.observations_at_time_t[time]:
                     evaluation = self.evaluate(expr, expr_values, obs.condition.formula)
-                    print('(Observations) Expression:', expr, 'given values:', expr_values, 'in the formula:',
-                          obs.condition.formula, 'was evaluated to:',
-                          evaluation, 'at time:', time)
+                    # print('(Observations) Expression:', expr, 'given values:', expr_values, 'in the formula:',
+                    #       obs.condition.formula, 'was evaluated to:',
+                    #       evaluation, 'at time:', time)
                     # Invalid model, so we don't even try to find an action for this time
                     if not evaluation:
                         models.remove(models[i])
@@ -283,9 +296,13 @@ class InconsistencyChecker:
 
     def join_statement_by_and(self, statement1: Statement, statement2: Statement, is_causes: bool) -> Statement:
         if is_causes:
-            return Causes(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)
+            return Causes(action=statement1.action,
+                          effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
+                          duration=statement1.duration)
         else:
-            return Releases(action=statement1.action, effect=Condition(And(statement1.effect.formula, statement2.effect.formula)), duration=statement1.duration)
+            return Releases(action=statement1.action,
+                            effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
+                            duration=statement1.duration)
 
     def action_impossible_at(self, action: ActionOccurrence) -> bool:
         """
@@ -294,7 +311,7 @@ class InconsistencyChecker:
         """
         if action.begin_time in self.action_time_constraints_at_time_t:
             if action.name in self.action_time_constraints_at_time_t[action.begin_time]:
-                print('action:', action, 'violates impossible_at at time:', action.begin_time)
+                # print('action:', action, 'violates impossible_at at time:', action.begin_time)
                 return True
         return False
 
@@ -311,13 +328,14 @@ class InconsistencyChecker:
         for impossible_if in self.action_formula_constraints:
             if action.name == impossible_if.action:
                 evaluation = self.evaluate(expr, expr_values, impossible_if.condition.formula)
-                print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
-                      impossible_if.condition.formula,
-                      'was evaluated to:',
-                      evaluation, 'for action:', action.name, 'at time:', action.begin_time)
+                # print('(ImpossibleIf) Expression:', expr, 'given values:', expr_values, 'in the formula:',
+                #       impossible_if.condition.formula,
+                #       'was evaluated to:',
+                #       evaluation, 'for action:', action.name, 'at time:', action.begin_time)
                 # Invalid model, so we don't even try to find an action for this time
                 if evaluation:
-                    print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', action.begin_time, 'expr:',
-                          expr, 'expr_values:', expr_values)
+                    # print('action:', action, 'violates impossible_if:', impossible_if, 'at time:', action.begin_time,
+                    #       'expr:',
+                    #       expr, 'expr_values:', expr_values)
                     return True
         return False
