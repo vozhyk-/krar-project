@@ -20,6 +20,7 @@ class Model:
         last_action = acs[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history(scenario)
+        self.action_history = dict()
 
     def initialize_history(self, scenario: Scenario) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
@@ -110,6 +111,9 @@ class Model:
         expr = list(fluent_symbol_dict.keys())
         expr_values = list(fluent_symbol_dict.values())
         return expr, expr_values
+
+    def add_to_action_history(self, time: int, action: ActionOccurrence):
+        self.action_history[time] = action
 
     def __str__(self):
         string = ''

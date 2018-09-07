@@ -84,6 +84,7 @@ class Engine:
                     print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
                     self.models.remove(self.models[i])
                 elif action is not None:
+                    self.models[i].add_to_action_history(action.begin_time, action)
                     new_models += self.execute_action(self.models[i], action, statements)
             self.models += new_models
             # After forking the new models,

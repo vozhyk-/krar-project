@@ -55,6 +55,7 @@ class Gui(tk.Frame):
                 i = 0
                 for model in self.engine.models:
                     print('Final model:', i, '\n', model)
+                    print('Action history for model', i, 'is:', model.action_history)
                     i += 1
 
     def test_query(self):
@@ -63,7 +64,7 @@ class Gui(tk.Frame):
         self.queries = parsing.query.parse_text(self.query_content)
 
         for query in self.queries:
-            print('Query:', query, 'was evaluated to:', query.validate(self.engine.models))
+            print('Query:', query, 'was evaluated to:', query.validate(self.engine.models, self.scenario))
 
 
 class StdRedirector(object):

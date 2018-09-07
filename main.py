@@ -24,9 +24,10 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
         i = 0
         for model in engine.models:
             print('Final model:', i, '\n', model)
+            print('Action history for model', i, 'is:', model.action_history)
             i += 1
         for query in queries:
-            print('Query:', query, 'was evaluated to:', query.validate(engine.models))
+            print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
 
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
-necessary executable load,shoot in 3
+necessary executable Load,Shoot in 3
+necessary executable Load,Shoot in 2
 possibly executable shoot in 0
 possibly executable shoot in 1
+necessary executable shoot in 1
 possibly executable shoot in 2
 some random sentence that wont match regex
 necessary alive & ~loaded at 0 when scenario.txt
