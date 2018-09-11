@@ -120,20 +120,28 @@ class ScenarioQuery(Query):
         self.str = query_type + " " + str(self.condition.formula) + " at " + time_point + " when " + scenario_file
 
     def validate(self,  models: List[Model], scen: Scenario = None) -> bool:
+        evaluations = []
         for i in range(len(models) - 1, -1, -1):
             expr, expr_values = models[i].get_symbol_values(self.time_point)
-            evaluation = InconsistencyChecker.evaluate(expr, expr_values, self.condition.formula)
-            # If this is a POSSIBLY query and our query holds in at least 1 model, return True
-            if self.query_type == QueryType.POSSIBLY and evaluation:
-                return True
-            # If this is a NECESSARY query and in 1 model our query doesn't hold, return False
-            elif self.query_type == QueryType.NECESSARY and not evaluation:
-                return False
-            # If this is a NECESSARY query and we already checked all models (i == 0) then return True
-            elif self.query_type == QueryType.NECESSARY and evaluation and i == 0:
-                return True
-        # If this is a POSSIBLY query and our query doesn't hold in any model, return False
-        return False
+            evaluations.append(InconsistencyChecker.evaluate(expr, expr_values, self.condition.formula))
+        if self.query_type == QueryType.POSSIBLY:
+            return self.evaluate_possible_query(evaluations)
+        else:
+            return self.evaluate_necessary_query(evaluations)
+
+    def evaluate_possible_query(self, evaluations: List[bool]) -> bool:
+        if True in evaluations:
+            return True
+        elif all(x==False for x in evaluations):
+            return False
+        return None
+
+    def evaluate_necessary_query(self, evaluations: List[bool]) -> bool:
+        if False in evaluations:
+            return False
+        elif all(x==True for x in evaluations):
+            return True
+        return None
 
     def __str__(self):
         return self.str

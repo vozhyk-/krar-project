@@ -291,8 +291,30 @@ class InconsistencyChecker:
         # Using the lambdify() method, we can evaluate a boolean formula given state of boolean variables
         # There is no "eval()" method in sympy for solving boolean formulas
         # https://stackoverflow.com/questions/42045906/typeerror-return-arrays-must-be-of-arraytype-using-lambdify-of-sympy-in-python
-        f = lambdify(symbols, formula, modules={'And': all, 'Or': any})
-        return f(*symbol_values)
+        f = lambdify(symbols, formula, modules={'And': any, 'Or': all})
+        combinations = InconsistencyChecker.get_all_combinations(symbol_values)
+        eval = f(*combinations[0])
+        for i in range(1, len(combinations)):
+            if f(*combinations[i]) != eval:
+                return None
+        return eval
+
+    @staticmethod
+    def get_all_combinations(symbol_values: List[bool]) -> List[List[bool]]:
+        combinations = []
+        combinations.append(symbol_values)
+        for i in range(len(symbol_values)):
+            if symbol_values[i] is None:
+                new_comb = []
+                for comb in combinations:
+                    copy = list(comb)
+                    copy2 = list(comb)
+                    copy[i] = False
+                    new_comb.append(copy)
+                    copy2[i] = True
+                    new_comb.append(copy2)
+                combinations = new_comb
+        return combinations
 
     def join_statement_by_and(self, statement1: Statement, statement2: Statement, is_causes: bool) -> Statement:
         if is_causes:
