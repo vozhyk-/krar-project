@@ -2,11 +2,11 @@
 
 ## Authors
 
-- Witaut Bajaryn: Parsing the domain description and scenarios.
-- Jakub Karaszkiewicz: Design documentation; examples and counter-examples.
-- Filip Matracki: The engine; model consistency validation; query parsing and execution.
-- Ivan Matyazh: Testing the engine and preprocessor implementation; bug fixing.
-- Fardeen Mohammed: Data structures and the GUI.
+- Witaut Bajaryn: Design documentation; Parsing the domain description and scenarios.
+- Jakub Karaszkiewicz: Design documentation; examples and counter-examples; bug fixing.
+- Filip Matracki: Design documentation; The engine; model consistency validation; query parsing and execution.
+- Ivan Matyazh: Design documentation; Testing the engine and preprocessor implementation; bug fixing.
+- Fardeen Mohammed: Design documentation; Data structures and the GUI.
 
 ## Example GUI usage
 
