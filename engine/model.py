@@ -83,11 +83,17 @@ class Model:
 
         return fluents
 
-    def update_fluent_history(self, solution: dict, time: int):
+    def update_fluent_history(self, solution: dict, time: int, duration: int):
         for key, value in solution.items():
             for j in range(self.fluent_history.shape[1]):
                 if str(key) == self.fluent_history[time][j].name:
                     self.fluent_history[time][j].value = value
+                    if ((duration > 1)
+                    and (time - duration >= 0)
+                    and (self.fluent_history[time][j].value != self.fluent_history[time - duration][j].value)):
+                        for t in range(time - duration + 1, time):
+                            self.fluent_history[t][j].value = None
+
         # Assume inertia law
         for i in range(time + 1, self.fluent_history.shape[0]):
             for j in range(self.fluent_history.shape[1]):

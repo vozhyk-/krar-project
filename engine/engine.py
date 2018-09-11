@@ -66,7 +66,7 @@ class Engine:
         # Create initial model which corresponds to the initial state
         initial_model = Model(self.checker.valid_scenario)
         # We may have more than 1 initial model
-        self.models += self.fork_model(initial_model, self.checker.sorted_observations[0].condition.formula, 0, True)
+        self.models += self.fork_model(initial_model, self.checker.sorted_observations[0].condition.formula, 0, 0, True)
         self.models = self.checker.remove_duplicate_models(self.models)
         i = 0
         for m in self.models:
@@ -96,7 +96,7 @@ class Engine:
 
         return True
 
-    def fork_model(self, model: Model, formula: boolalg.Boolean, time: int, is_releases_statement: bool = False) -> \
+    def fork_model(self, model: Model, formula: boolalg.Boolean, time: int, duration: int, is_releases_statement: bool = False) -> \
             List[Model]:
         """
         Checks all solutions to formula  for a given "causes" or "releases" statement and 
@@ -104,6 +104,7 @@ class Engine:
         :param model: The model to be forked, it could be removed from the list of models if
         :param formula: The sympy boolean formula that must hold at this time
         :param time: The time at which the action effect given by "formula" must hold in the model
+        :param duration: The duration of action is used for occusion regions
         :param is_releases_statement: If true, then we keep the model that we want to fork. 
         If false, it means we want to fork based on a CAUSES statement,
         so we remove the model that was passed in because we only want to have models where formula MUST HOLD
@@ -114,7 +115,7 @@ class Engine:
 
         for s in solutions:
             new_model = deepcopy(model)
-            new_model.update_fluent_history(s, time)
+            new_model.update_fluent_history(s, time, duration)
             new_models.append(new_model)
 
         if not is_releases_statement and model in self.models:
@@ -134,8 +135,8 @@ class Engine:
         """
         new_models = []
         if statements['releases'] is not None:
-            new_models += self.fork_model(model, statements['releases'].effect.formula, action.begin_time + statements['releases'].duration, True)
+            new_models += self.fork_model(model, statements['releases'].effect.formula, action.begin_time + statements['releases'].duration, statements['releases'].duration, True)
         if statements['causes'] is not None:
-            new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, False)
+            new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, statements['causes'].duration, False)
 
         return new_models
