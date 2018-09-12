@@ -199,35 +199,36 @@ class InconsistencyChecker:
                 if statement.action == action.name and action.begin_time + statement.duration == time:
                     evaluation = None
                     current_action = action
-                    if expr is None or expr_values is None:
-                        # We found an ActionOccurrence, let's get the symbol values in the model at the time it occurred
-                        # So we can evaluate action preconditions against them
-                        expr, expr_values = model.get_symbol_values(current_action.begin_time)
-                    if isinstance(statement.condition, bool):
-                        # By default EffectStatements have a bool value for condition, this if statement handles that
-                        evaluation = statement.condition
-                    else:
-                        # Our statement in the domain description has a precondition, validate it against our model
-                        evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
-                    if evaluation and isinstance(statement, Releases):
-                        # Our statement precondition holds, so we add it to the returned statements
-                        if current_statements['releases'] is None:
-                            current_statements['releases'] = statement
+                    if statement.duration <= action.duration: # Use only statements which duration can be filled in the action occurence
+                        if expr is None or expr_values is None:
+                            # We found an ActionOccurrence, let's get the symbol values in the model at the time it occurred
+                            # So we can evaluate action preconditions against them
+                            expr, expr_values = model.get_symbol_values(current_action.begin_time)
+                        if isinstance(statement.condition, bool):
+                            # By default EffectStatements have a bool value for condition, this if statement handles that
+                            evaluation = statement.condition
                         else:
-                            # We already have a releases statement, so join its effect with the existing one
-                            # This case handles the following scenario:
-                            # Load releases ~hidden in 2
-                            # Load releases loaded in 2
-                            # Both statements are joined into 1 larger one: Load releases ~hidden & loaded in 2
-                            current_statements['releases'] = self.join_statement_by_and(current_statements['releases'],
-                                                                                        statement, False)
-                    # The same happens to causes statements...
-                    elif evaluation and isinstance(statement, Causes):
-                        if current_statements['causes'] is None:
-                            current_statements['causes'] = statement
-                        else:
-                            current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
-                                                                                      statement, True)
+                            # Our statement in the domain description has a precondition, validate it against our model
+                            evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
+                        if evaluation and isinstance(statement, Releases):
+                            # Our statement precondition holds, so we add it to the returned statements
+                            if current_statements['releases'] is None:
+                                current_statements['releases'] = statement
+                            else:
+                                # We already have a releases statement, so join its effect with the existing one
+                                # This case handles the following scenario:
+                                # Load releases ~hidden in 2
+                                # Load releases loaded in 2
+                                # Both statements are joined into 1 larger one: Load releases ~hidden & loaded in 2
+                                current_statements['releases'] = self.join_statement_by_and(current_statements['releases'],
+                                                                                            statement, False)
+                        # The same happens to causes statements...
+                        elif evaluation and isinstance(statement, Causes):
+                            if current_statements['causes'] is None:
+                                current_statements['causes'] = statement
+                            else:
+                                current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
+                                                                                          statement, True)
 
             if current_action is not None:
                 # Only 1 action can affect the model at a time, so if we found one then break the loop

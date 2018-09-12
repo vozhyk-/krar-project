@@ -134,9 +134,9 @@ class Engine:
         :return: The list of models that has been forked
         """
         new_models = []
-        if statements['releases'] is not None:
+        if statements is not None and statements['releases'] is not None:
             new_models += self.fork_model(model, statements['releases'].effect.formula, action.begin_time + statements['releases'].duration, statements['releases'].duration, True)
-        if statements['causes'] is not None:
+        if statements is not None and statements['causes'] is not None:
             new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, statements['causes'].duration, False)
 
         return new_models
