@@ -18,7 +18,7 @@ def parse_file(file: str) -> Scenario:
 
 def parse_text(text: str) -> Scenario:
     lines = text.split('\n')
-    lines.remove('')
+    lines = list(filter(None, lines))
     observation_lines, action_occurrence_lines = split_scenario(lines)
     observations = parsing.observation.parse_all(observation_lines)
     action_occurrences = parsing.action_occurrence.parse_all(action_occurrence_lines)

@@ -13,7 +13,7 @@ def parse_file(file: str) -> DomainDescription:
 
 def parse_text(text: str) -> DomainDescription:
     lines = text.split('\n')
-    lines.remove('')
+    lines = list(filter(None, lines))
     statements = [parsing.statement.parse(x) for x in lines]
 
     return DomainDescription(statements)

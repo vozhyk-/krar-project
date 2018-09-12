@@ -13,7 +13,7 @@ def parse_file(query_file: str) -> List[Query]:
 
 def parse_text(text: str) -> List[Query]:
     lines = text.split('\n')
-    lines.remove('')
+    lines = list(filter(None, lines))
     queries = [parse_query(x.strip()) for x in lines]
     queries = [x for x in queries if x is not None]  # remove None values
     return queries
