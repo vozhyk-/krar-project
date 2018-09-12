@@ -20,14 +20,17 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
         print("The library and the scenario are valid.")
 
     if engine.run(scenario=scenario, domain_desc=domain_desc):
-        print('After the engine ran We found', len(engine.models))
+        print('After the engine ran We found', len(engine.models), 'models')
         i = 0
         for model in engine.models:
             print('Final model:', i, '\n', model)
             print('Action history for model', i, 'is:', model.action_history)
             i += 1
-        for query in queries:
-            print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
+        if len(engine.models) != 0:
+            for query in queries:
+                print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
+        else:
+            print('Query cannot be evaluated due to lack of models')
 
 
 if __name__ == '__main__':
