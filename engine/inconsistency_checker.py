@@ -268,8 +268,8 @@ class InconsistencyChecker:
         :param time: The time at which the observations will be checked
         :return: None
         """
-        tempmodels = []
         for i in range(len(models) - 1, -1, -1):
+            is_valid = True
             expr, expr_values = models[i].get_symbol_values(time)
             if time in self.observations_at_time_t:
                 for obs in self.observations_at_time_t[time]:
@@ -278,9 +278,10 @@ class InconsistencyChecker:
                     #       obs.condition.formula, 'was evaluated to:',
                     #       evaluation, 'at time:', time)
                     # Invalid model, so we don't even try to find an action for this time
-                    if evaluation:
-                        tempmodels.append(models[i])
-        models = list(tempmodels)
+                    if evaluation != True:
+                        is_valid = False
+            if not is_valid:
+                models.remove((models[i]))
 
     @staticmethod
     def evaluate(symbols: List[Symbol], symbol_values: List[bool], formula: boolalg.Boolean) -> bool:
