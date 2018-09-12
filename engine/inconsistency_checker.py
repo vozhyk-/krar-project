@@ -153,13 +153,15 @@ class InconsistencyChecker:
         initial_fluents = []
         if len(self.sorted_observations) > 0:
             # assume first observation is the initial description of fluents
-            for fluent_name, fluent_value in satisfiable(self.sorted_observations[0].condition.formula).items():
-                initial_fluents.append(fluent_name)
+            if not satisfiable(self.sorted_observations[0].condition.formula):
+                for fluent_name, fluent_value in satisfiable(self.sorted_observations[0].condition.formula).items():
+                    initial_fluents.append(fluent_name)
 
-            for i in range(1, len(self.sorted_observations)):
-                for fluent_name, fluent_val in satisfiable(self.sorted_observations[i].condition.formula).items():
-                    if fluent_name not in initial_fluents:
-                        self.is_consistent = False
+            if not satisfiable(self.sorted_observations[0].condition.formula):
+                for i in range(1, len(self.sorted_observations)):
+                    for fluent_name, fluent_val in satisfiable(self.sorted_observations[i].condition.formula).items():
+                        if fluent_name not in initial_fluents:
+                            self.is_consistent = False
                         # print('Fluent:', fluent_name, 'was not defined in the initial state!')
 
     def remove_duplicate_models(self, models: List[Model]) -> List[Model]:
