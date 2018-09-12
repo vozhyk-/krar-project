@@ -27,6 +27,9 @@ class ActionQuery(Query):
         self.str = query_type + " executable " + actions + " in " + duration
 
     def validate(self, models: List[Model], scen: Scenario = None) -> bool:
+        if len(models) == 0:
+            return True
+
         scenario_act_names = [act.name.lower() for act in scen.action_occurrences]
         for action_str in self.action_strings:
             if action_str not in scenario_act_names:
@@ -120,6 +123,9 @@ class ScenarioQuery(Query):
         self.str = query_type + " " + str(self.condition.formula) + " at " + time_point + " when " + scenario_file
 
     def validate(self,  models: List[Model], scen: Scenario = None) -> bool:
+        if len(models) == 0:
+            return True
+
         evaluations = []
         for i in range(len(models) - 1, -1, -1):
             expr, expr_values = models[i].get_symbol_values(self.time_point)
@@ -130,18 +136,12 @@ class ScenarioQuery(Query):
             return self.evaluate_necessary_query(evaluations)
 
     def evaluate_possible_query(self, evaluations: List[bool]) -> bool:
-        if True in evaluations:
-            return True
-        elif all(x==False for x in evaluations):
-            return False
-        return None
+        print("Evaluations: ", evaluations)
+        return any(x!=False for x in evaluations)
 
     def evaluate_necessary_query(self, evaluations: List[bool]) -> bool:
-        if False in evaluations:
-            return False
-        elif all(x==True for x in evaluations):
-            return True
-        return None
+        print("Evaluations: ", evaluations)
+        return all(x==True for x in evaluations)
 
     def __str__(self):
         return self.str

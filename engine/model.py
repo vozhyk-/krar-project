@@ -56,7 +56,7 @@ class Model:
         return fluent_history
 
     def history_function(self, fluent: Fluent, time_point: int):
-        time_point_row = self.fluent_history[time_point]
+        time_point_row = self.fluent_history[self.clamp_time(time_point)]
         if time_point_row.__contains__(fluent):
             return fluent.value
         else:
@@ -99,6 +99,9 @@ class Model:
             for j in range(self.fluent_history.shape[1]):
                 self.fluent_history[i][j] = deepcopy(self.fluent_history[i - 1][j])
 
+    def clamp_time(self, time: int):
+        return min(time, self.last_time_point - 1)
+
     def get_symbol_values(self, time: int) -> Tuple[List[sympy.Symbol], List[bool]]:
         """
         Method converts a row of "Fluent" objects to a tuple of 2 lists 
@@ -108,7 +111,7 @@ class Model:
         :return: A tuple of 2 lists, one list stores the sympy symbols
         while the second stores the boolean values associated with them
         """
-        current_fluents = self.fluent_history[time]
+        current_fluents = self.fluent_history[self.clamp_time(time)]
         fluent_symbol_dict = dict()  # SympySymbol -> bool
         # Convert state of fluents to sympy dict
         # https://stackoverflow.com/questions/42024034/evaluate-sympy-boolean-expression-in-python

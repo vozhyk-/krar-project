@@ -1,0 +1,5 @@
+OBS:
+0 alive & ~loaded
+ACS:
+Load 1 2
+Fire 5 3

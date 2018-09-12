@@ -60,8 +60,7 @@ class Engine:
         # After pre-processing the domain desc and scenario, pass it to the inconsistency_checker
         self.checker = InconsistencyChecker(unique_domain_desc, unique_scenario)
         if not self.checker.is_consistent:
-            print('in Model.run(): InconsistencyChecker claims scenario and/or domain description is invalid,'
-                  ' cannot continue!')
+            print('in Model.run(): InconsistencyChecker claims scenario and/or domain description is invalid')
             return False
         # Create initial model which corresponds to the initial state
         initial_model = Model(self.checker.valid_scenario)

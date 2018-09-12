@@ -30,7 +30,8 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
             for query in queries:
                 print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
         else:
-            print('Query cannot be evaluated due to lack of models')
+            for query in queries:
+                print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
 
 
 if __name__ == '__main__':
