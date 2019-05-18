@@ -11,30 +11,27 @@ import parsing.query
 
 
 def main(library_file: str, scenario_file: str, query_file: str = None):
+    scenario = parsing.scenario.parse_file(scenario_file)
     domain_desc = parsing.domain_description.parse_file(library_file)
-    print('Parsed domain description:')
-    for statement in domain_desc.statements:
-        print(statement)
-    # scenario = parsing.scenario.parse_file(scenario_file)
-    # queries = parsing.query.parse_file(query_file)
-    # engine = Engine()
-    #
-    # if len(queries) == 0:
-    #     print("The library and the scenario are valid.")
-    #
-    # if engine.run(scenario=scenario, domain_desc=domain_desc):
-    #     print('After the engine ran We found', len(engine.models), 'models')
-    #     i = 0
-    #     for model in engine.models:
-    #         print('Final model:', i, '\n', model)
-    #         print('Action history for model', i, 'is:', model.action_history)
-    #         i += 1
-    #     if len(engine.models) != 0:
-    #         for query in queries:
-    #             print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
-    #     else:
-    #         for query in queries:
-    #             print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
+    queries = parsing.query.parse_file(query_file)
+    engine = Engine()
+
+    if len(queries) == 0:
+        print("The library and the scenario are valid.")
+
+    if engine.run(scenario=scenario, domain_desc=domain_desc):
+        print('After the engine ran We found', len(engine.models), 'models')
+        i = 0
+        for model in engine.models:
+            print('Final model:', i, '\n', model)
+            print('Action history for model', i, 'is:', model.action_history)
+            i += 1
+        if len(engine.models) != 0:
+            for query in queries:
+                print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
+        else:
+            for query in queries:
+                print('Query:', query, 'was evaluated to:', query.validate(engine.models, scenario))
 
 
 if __name__ == '__main__':

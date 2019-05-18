@@ -4,6 +4,4 @@ from structs.condition import Condition
 
 
 def parse(input: str) -> Condition:
-    if input is None:
-        return None
     return Condition(sympy_parser.parse_expr(input))

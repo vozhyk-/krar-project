@@ -10,9 +10,8 @@ class Statement:
 class EffectStatement(Statement, NamedTuple):
     action: str
     effect: Condition
-    duration: int = 1
-    condition: Condition = None
-    agent: str = 'nobody'
+    duration: int
+    condition: Condition = True
 
 
 class Causes(EffectStatement):
@@ -28,17 +27,6 @@ class ImpossibleIf(Statement, NamedTuple):
     condition: Condition
 
 
-# TODO REMOVE
 class ImpossibleAt(Statement, NamedTuple):
     action: str
     time: int
-
-
-class ImpossibleBy(Statement, NamedTuple):
-    action: str
-    agent: str
-
-
-class Triggers(Statement, NamedTuple):
-    condition: Condition
-    action: str

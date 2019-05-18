@@ -1,5 +1,5 @@
-load causes loaded by hunter
-shoot causes ~loaded by hunter
-shoot causes ~alive if loaded & ~hidden by hunter
-escape releases hidden by turkey
-loaded triggers escape
+Load releases loaded during 2
+Load releases ~hidden during 1
+Shoot causes ~loaded during 1
+Shoot causes ~alive if loaded & ~hidden during 1
+impossible Shoot if ~loaded
