@@ -1,5 +1,5 @@
 from typing import List, Union
-from structs.query import Query, ActionQuery, ScenarioQuery
+from structs.query import Query, ActionQuery, ConditionQuery, InvolvedQuery
 import re
 
 
@@ -20,14 +20,18 @@ def parse_text(text: str) -> List[Query]:
 
 
 def parse_query(raw_query: str) -> Union[Query, None]:
-    action_regex = re.compile("(necessary|possibly) executable (.*?) in ([1-9]+)$")
-    scenario_regex = re.compile("(necessary|possibly) (.*?) at ([0-9]+) when ([a-zA-Z0-9].*[a-zA-Z0-9]+)$")
+    action_regex = re.compile("(necessary|possibly) (.*?) at ([0-9]+)$")
+    # We need "when Sc" in order to distinguish ActionQuery from ConditionQuery?
+    condition_regex = re.compile("(necessary|possibly) (.*?) at ([0-9]+) when ([a-zA-Z0-9].*[a-zA-Z0-9]+)$")
+    involved_regex = re.compile("(necessary|possibly) involved (.*?)$")
     action_match = action_regex.search(raw_query)
+    condition_match = condition_regex.search(raw_query)
+    involved_match = involved_regex.search(raw_query)
     if action_match:
         # print("Query:", raw_query, "matched action_regex, groups:", action_match.groups())
         return ActionQuery(*action_match.groups())
-    else:
-        scenario_match = scenario_regex.search(raw_query)
-        if scenario_match:
-            return ScenarioQuery(*scenario_match.groups())
+    elif condition_match:
+        return ConditionQuery(*condition_match.groups())
+    elif involved_match:
+        return InvolvedQuery(*involved_match.groups())
     return None

@@ -19,12 +19,13 @@ class Query:
 
 
 class ActionQuery(Query):
-    def __init__(self, query_type: str, actions: str, duration: str):
+    def __init__(self, query_type: str, actions: str, begin_time: int, duration: str = 1):
         self.query_type = QueryType.NECESSARY if query_type == "necessary" else QueryType.POSSIBLY
         self.action_strings = actions.split(',')
         self.action_strings = [act.lower() for act in self.action_strings]
         self.duration = int(duration)
-        self.str = query_type + " executable " + actions + " in " + duration
+        self.time_point = begin_time
+        self.str = "{} {} at {}".format(query_type, self.action_strings[0], str(begin_time))
 
     def validate(self, models: List[Model], scen: Scenario = None) -> bool:
         if len(models) == 0:
@@ -44,33 +45,32 @@ class ActionQuery(Query):
                 for act_str in self.action_strings:
                     if act_str not in model_action_strings:
                         break
-                t = 0
-                while t < model.last_time_point:
-                    for i in range(len(self.action_strings)):
-                        if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
-                            # found first action
-                            end_time = model.action_history[t].begin_time + self.duration
-                            t = model.action_history[t].begin_time + model.action_history[t].duration
-                            if t > end_time:
-                                # first action's duration is too long
-                                break
-                            elif len(self.action_strings) == 1:
-                                # print('is_valid = True')
-                                return True
-                            final_idx = len(self.action_strings) - 1 if i != len(self.action_strings) - 1 else len(self.action_strings) - 2
-                            while t < end_time:
-                                for j in range(len(self.action_strings)):
-                                    if i != j:
-                                        if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[j]:
-                                            t += model.action_history[t].duration
-                                            if t > end_time:
-                                                # i = -1
-                                                break
-                                            elif j == final_idx:
-                                                # valid interval found
-                                                return True
-                                t += 1
-                    t += 1
+                # TODO simplify logic
+                t = self.time_point
+                for i in range(len(self.action_strings)):
+                    if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
+                        # found first action
+                        end_time = model.action_history[t].begin_time + self.duration
+                        t = model.action_history[t].begin_time + model.action_history[t].duration
+                        if t > end_time:
+                            # first action's duration is too long
+                            break
+                        elif len(self.action_strings) == 1:
+                            # print('is_valid = True')
+                            return True
+                        final_idx = len(self.action_strings) - 1 if i != len(self.action_strings) - 1 else len(self.action_strings) - 2
+                        while t < end_time:
+                            for j in range(len(self.action_strings)):
+                                if i != j:
+                                    if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[j]:
+                                        t += model.action_history[t].duration
+                                        if t > end_time:
+                                            # i = -1
+                                            break
+                                        elif j == final_idx:
+                                            # valid interval found
+                                            return True
+                            t += 1
 
         elif self.query_type == QueryType.NECESSARY:
             for model in models:
@@ -79,48 +79,46 @@ class ActionQuery(Query):
                 for act_str in self.action_strings:
                     if act_str not in model_action_strings:
                         return False
-                t = 0
-                while t < model.last_time_point:
-                    for i in range(len(self.action_strings)):
-                        if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
-                            # found first action
-                            end_time = model.action_history[t].begin_time + self.duration
-                            t = model.action_history[t].begin_time + model.action_history[t].duration
-                            if t > end_time:
-                                # first action's duration is too long
-                                break
-                            elif len(self.action_strings) == 1:
-                                # print('is_valid = True')
-                                is_valid = True
-                            final_idx = len(self.action_strings) - 1 if i != len(self.action_strings) - 1 else len(self.action_strings) - 2
-                            while t < end_time:
-                                for j in range(len(self.action_strings)):
-                                    if i != j:
-                                        if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[j]:
-                                            t += model.action_history[t].duration
-                                            if t > end_time:
-                                                # i = -1
-                                                break
-                                            elif j == final_idx:
-                                                # valid interval found
-                                                is_valid = True
-                                t += 1
-                    t += 1
-                if not is_valid:
-                    return False
+                # TODO simplify logic
+                t = self.time_point
+                for i in range(len(self.action_strings)):
+                    if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
+                        # found first action
+                        end_time = model.action_history[t].begin_time + self.duration
+                        t = model.action_history[t].begin_time + model.action_history[t].duration
+                        if t > end_time:
+                            # first action's duration is too long
+                            break
+                        elif len(self.action_strings) == 1:
+                            # print('is_valid = True')
+                            is_valid = True
+                        final_idx = len(self.action_strings) - 1 if i != len(self.action_strings) - 1 else len(self.action_strings) - 2
+                        while t < end_time:
+                            for j in range(len(self.action_strings)):
+                                if i != j:
+                                    if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[j]:
+                                        t += model.action_history[t].duration
+                                        if t > end_time:
+                                            # i = -1
+                                            break
+                                        elif j == final_idx:
+                                            # valid interval found
+                                            is_valid = True
+                            t += 1
+                t += 1
+
         return is_valid
 
     def __str__(self):
         return self.str
 
 
-class ScenarioQuery(Query):
-    def __init__(self, query_type: str, condition_str: str, time_point: str, scenario_file: str):
+class ConditionQuery(Query):
+    def __init__(self, query_type: str, condition_str: str, time_point: str, scenario: str):
         self.query_type = QueryType.NECESSARY if query_type == "necessary" else QueryType.POSSIBLY
         self.condition = parsing.condition.parse(condition_str)
         self.time_point = int(time_point)
-        self.scenario_file = scenario_file
-        self.str = query_type + " " + str(self.condition.formula) + " at " + time_point + " when " + scenario_file
+        self.str = self.str = "{} {} at {} when {}".format(self.query_type, str(self.condition), self.time_point, scenario)
 
     def validate(self,  models: List[Model], scen: Scenario = None) -> bool:
         if len(models) == 0:
@@ -142,6 +140,20 @@ class ScenarioQuery(Query):
     def evaluate_necessary_query(self, evaluations: List[bool]) -> bool:
         print("Evaluations: ", evaluations)
         return all(x==True for x in evaluations)
+
+    def __str__(self):
+        return self.str
+
+
+class InvolvedQuery(Query):
+    def __init__(self, query_type: str, agent: str):
+        self.query_type = QueryType.NECESSARY if query_type == "necessary" else QueryType.POSSIBLY
+        self.agent = agent
+        self.str = "{} involved {} ".format(self.query_type, self.agent)
+
+    def validate(self,  models: List[Model], scen: Scenario = None) -> bool:
+        # TODO
+        return False
 
     def __str__(self):
         return self.str

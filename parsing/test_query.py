@@ -1,55 +1,51 @@
 import unittest
 import sympy
+import os
 import parsing.query
 import structs.query
-import structs.query
-from structs.statements import Causes, Releases, ImpossibleIf
-from structs.condition import Condition
+from structs.query import *
+
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 class QueryTestCase(unittest.TestCase):
     def test_parse_example(self):
-        queries = parsing.query.parse_file("example/queries.txt")
+        queries = parsing.query.parse_file("../example/queries.txt")
         # self.assertEqual(len(queries), 6)
-        assert len(queries) == 8
+        self.assertEqual(6, len(queries))
 
-        # necessary executable load,shoot in 3 (ActionQuery)
-        self.assertEqual(queries[0].query_type, structs.query.QueryType.NECESSARY)
-        self.assertEqual(queries[0].actions, ["load", "shoot"])
-        self.assertEqual(queries[0].duration, 3)
+        # possibly involved hunter
+        self.assertEqual(True, isinstance(queries[0], InvolvedQuery))
+        self.assertEqual(structs.query.QueryType.POSSIBLY, queries[0].query_type)
+        self.assertEqual(queries[0].agent, "hunter")
 
-        # possibly executable shoot in 1 (ActionQuery)
-        self.assertEqual(queries[1].query_type, structs.query.QueryType.POSSIBLY)
-        self.assertEqual(queries[1].actions, ["shoot"])
-        self.assertEqual(queries[1].duration, 1)
-
-        # possibly executable shoot in 2 (ActionQuery)
-        self.assertEqual(queries[2].query_type, structs.query.QueryType.POSSIBLY)
-        self.assertEqual(queries[2].actions, ["shoot"])
-        self.assertEqual(queries[2].duration, 2)
+        # necessary involved turkey
+        self.assertEqual(True, isinstance(queries[1], InvolvedQuery))
+        self.assertEqual(structs.query.QueryType.NECESSARY, queries[1].query_type)
+        self.assertEqual(queries[1].agent, "turkey")
 
         alive, loaded, hidden = sympy.symbols("alive, loaded, hidden")
-        # necessary alive & ~loaded at 0 when scenario.txt (ScenarioQuery)
-        self.assertEqual(queries[3].query_type, structs.query.QueryType.NECESSARY)
-        self.assertEqual(queries[3].condition.formula, alive & ~loaded)
-        self.assertEqual(queries[3].time_point, 0)
+        # possibly executable shoot in 2 (ActionQuery)
+        self.assertEqual(True, isinstance(queries[2], ConditionQuery))
+        self.assertEqual(structs.query.QueryType.NECESSARY, queries[2].query_type)
+        self.assertEqual(alive, queries[2].condition.formula)
+        self.assertEqual(4, queries[2].time_point)
 
-        # possibly hidden at 2 when scenario.txt (ScenarioQuery)
-        self.assertEqual(queries[4].query_type, structs.query.QueryType.POSSIBLY)
-        self.assertEqual(queries[4].condition.formula, hidden)
-        self.assertEqual(queries[4].time_point, 2)
+        # necessary alive & ~loaded at 0 when scenario.txt (ConditionQuery)
+        self.assertEqual(True, isinstance(queries[3], ConditionQuery))
+        self.assertEqual(structs.query.QueryType.POSSIBLY, queries[3].query_type)
+        self.assertEqual(alive, queries[3].condition.formula)
+        self.assertEqual(4, queries[3].time_point)
 
-        # necessary ~hidden at 3 when scenario.txt (ScenarioQuery)
-        self.assertEqual(queries[5].query_type, structs.query.QueryType.NECESSARY)
-        self.assertEqual(queries[5].condition.formula, ~hidden)
-        self.assertEqual(queries[5].time_point, 3)
+        # possibly hidden at 2 when scenario.txt (ConditionQuery)
+        self.assertEqual(True, isinstance(queries[4], ActionQuery))
+        self.assertEqual(structs.query.QueryType.NECESSARY, queries[4].query_type)
+        self.assertEqual(["escape"], queries[4].action_strings)
+        self.assertEqual(2, int(queries[4].time_point))
 
-        # possibly ~loaded & ~alive at 4 when scenario.txt (ScenarioQuery)
-        self.assertEqual(queries[6].query_type, structs.query.QueryType.POSSIBLY)
-        self.assertEqual(queries[6].condition.formula, ~loaded & ~alive)
-        self.assertEqual(queries[6].time_point, 4)
-
-        # necessary ~loaded & ~alive at 4 when scenario.txt (ScenarioQuery)
-        self.assertEqual(queries[7].query_type, structs.query.QueryType.NECESSARY)
-        self.assertEqual(queries[7].condition.formula, ~loaded & ~alive)
-        self.assertEqual(queries[7].time_point, 4)
+        # necessary ~hidden at 3 when scenario.txt (ConditionQuery)
+        self.assertEqual(True, isinstance(queries[5], ActionQuery))
+        self.assertEqual(structs.query.QueryType.POSSIBLY, queries[5].query_type)
+        self.assertEqual(["escape"], queries[5].action_strings)
+        self.assertEqual(2, int(queries[5].time_point))

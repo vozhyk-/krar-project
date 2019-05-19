@@ -1,6 +1,6 @@
 possibly involved hunter
 necessary involved turkey
-necessary alive at 4
-possibly alive at 4
+necessary alive at 4 when ExampleScenario
+possibly alive at 4 when ExampleScenario
 necessary escape at 2
 possibly escape at 2

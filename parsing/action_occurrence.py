@@ -8,7 +8,5 @@ def parse_all(lines: List[str]) -> List[ActionOccurrence]:
 
 
 def parse(line: str) -> ActionOccurrence:
-    name, raw_begin_time, raw_duration = line.split(" ")
-    begin_time = int(raw_begin_time)
-    duration = int(raw_duration)
-    return ActionOccurrence(name, begin_time, duration)
+    name, agent_name, raw_begin_time = line.split(" ")
+    return ActionOccurrence(name=name, begin_time=int(raw_begin_time), duration=1, agent=agent_name)

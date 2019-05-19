@@ -15,8 +15,16 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
     print('Parsed domain description:')
     for statement in domain_desc.statements:
         print(statement)
-    # scenario = parsing.scenario.parse_file(scenario_file)
-    # queries = parsing.query.parse_file(query_file)
+    scenario = parsing.scenario.parse_file(scenario_file)
+    print('Parsed scenario:')
+    for statement in scenario.observations:
+        print(statement)
+    for statement in scenario.action_occurrences:
+        print(statement)
+    queries = parsing.query.parse_file(query_file)
+    print('Parsed queries:')
+    for statement in queries:
+        print(statement)
     # engine = Engine()
     #
     # if len(queries) == 0:
