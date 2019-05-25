@@ -11,7 +11,7 @@ class EffectStatement(Statement, NamedTuple):
     action: str
     effect: Condition
     duration: int = 1
-    condition: Condition = None
+    condition: Condition = True
     agent: str = 'nobody'
 
 
