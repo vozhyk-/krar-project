@@ -25,24 +25,24 @@ class Preprocessor:
         if isinstance(statement, EffectStatement):
             for j in range(len(unique_stat)):
                 if (isinstance(unique_stat[j], EffectStatement)
-                and (statement.action == unique_stat[j].action)
-                and (statement.duration == unique_stat[j].duration)
-                and (statement.condition == unique_stat[j].condition)
-                and (statement.effect == unique_stat[j].effect)):
+                        and (statement.action == unique_stat[j].action)
+                        and (statement.duration == unique_stat[j].duration)
+                        and (statement.condition == unique_stat[j].condition)
+                        and (statement.effect == unique_stat[j].effect)):
                     return False
 
         if isinstance(statement, ImpossibleIf):
             for j in range(len(unique_stat)):
                 if (isinstance(unique_stat[j], ImpossibleIf)
-                and (statement.action == unique_stat[j].action)
-                and (statement.condition == unique_stat[j].condition)):
+                        and (statement.action == unique_stat[j].action)
+                        and (statement.condition == unique_stat[j].condition)):
                     return False
 
         if isinstance(statement, ImpossibleAt):
             for j in range(len(unique_stat)):
                 if (isinstance(unique_stat[j], ImpossibleAt)
-                and (statement.action == unique_stat[j].action)
-                and (statement.time == unique_stat[j].time)):
+                        and (statement.action == unique_stat[j].action)
+                        and (statement.time == unique_stat[j].time)):
                     return False
         return True
 
@@ -52,7 +52,7 @@ class Preprocessor:
             unique = True
             for j in range(len(unique_obs)):
                 if ((observations[i].condition == unique_obs[j].condition)
-                and (observations[i].begin_time == unique_obs[j].begin_time)):
+                        and (observations[i].begin_time == unique_obs[j].begin_time)):
                     unique = False
                     break
             if unique:
@@ -65,8 +65,8 @@ class Preprocessor:
             unique = True
             for j in range(len(unique_act)):
                 if ((actions[i].duration == unique_act[j].duration)
-                and (actions[i].begin_time == unique_act[j].begin_time)
-                and (actions[i].name == unique_act[j].name)):
+                        and (actions[i].begin_time == unique_act[j].begin_time)
+                        and (actions[i].name == unique_act[j].name)):
                     unique = False
                     break
             if unique:

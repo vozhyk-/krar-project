@@ -3,4 +3,4 @@ from sympy.logic import boolalg
 
 
 class Condition(NamedTuple):
-    formula: boolalg.Boolean
+    formula: boolalg.Boolean = True
