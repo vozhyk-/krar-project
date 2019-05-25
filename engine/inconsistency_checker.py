@@ -175,7 +175,7 @@ class InconsistencyChecker:
         return new_list
 
     def validate_model(self, model: Model, time: int) -> Tuple[
-        bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]]]:
+        bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]], str]:
         """
         Firstly we find an action,
         then we look in the domain description for Releases/Causes statements that have an effect at this specific time.
@@ -184,60 +184,75 @@ class InconsistencyChecker:
         If an action is found, then it is validated against ImpossibleAt/ImpossibleIf statements
         :param model: The model to be validated
         :param time: The time at which we check/validate the model
-        :return: A tuple of 3 elements, first is a bool that says whether or not model is valid
+        :return: A tuple of 4 elements, first is a bool that says whether or not model is valid
         second is the action that is affecting the model passed into the method, and the third either None (if no statements associated with action were found)
         or a dict that contains the keys "releases" and the string "causes", with the value storing their respective Releases/Causes statement
-        that is correlated with the action
+        that is correlated with the action. 4th returns error string
         """
         current_statements = {'releases': None, 'causes': None}
         current_action = None
         expr = None
         expr_values = None
-        for t in self.actions_at_time_t.keys():
-            action = self.actions_at_time_t[t]
-            for statement in self.joined_statements[action.name]:
-                if statement.action == action.name and action.begin_time + statement.duration == time:
-                    evaluation = None
-                    current_action = action
-                    if statement.duration <= action.duration:  # Use only statements which duration can be filled in the action occurence
-                        if expr is None or expr_values is None:
-                            # We found an ActionOccurrence, let's get the symbol values in the model at the time it occurred
-                            # So we can evaluate action preconditions against them
-                            expr, expr_values = model.get_symbol_values(current_action.begin_time)
-                        if isinstance(statement.condition, bool):
-                            # By default EffectStatements have a bool value for condition, this if statement handles that
-                            evaluation = statement.condition
+        action_src = None
+        err_str = "No error"
+        action_times = self.actions_at_time_t.keys()
+        triggered_action_times = None if model.triggered_actions is None else model.triggered_actions.keys()
+        t = time - 1
+        action_from_acs_executed_now = t in action_times
+        triggered_action_executed_now = False if triggered_action_times is None else t in triggered_action_times
+
+        if action_from_acs_executed_now and triggered_action_executed_now:
+            err_str = "Model is invalid because 2 actions are executed at time: {}\n{} {}".format(t, self.actions_at_time_t[t], model.triggered_actions[t])
+            return False, None, None, err_str
+        elif action_from_acs_executed_now:
+            action_src = self.actions_at_time_t
+        elif triggered_action_executed_now:
+            action_src = model.triggered_actions
+        else:
+            # If no action is affecting us now, assume model is valid
+            return True, None, None, err_str
+
+        action = action_src[t]
+        for statement in self.joined_statements[action.name]:
+            if statement.action == action.name and action.begin_time + statement.duration == time:
+                evaluation = None
+                current_action = action
+                if statement.duration <= action.duration:  # Use only statements which duration can be filled in the action occurence
+                    if expr is None or expr_values is None:
+                        # We found an ActionOccurrence, let's get the symbol values in the model at the time it occurred
+                        # So we can evaluate action preconditions against them
+                        expr, expr_values = model.get_symbol_values(current_action.begin_time)
+                    if isinstance(statement.condition, bool):
+                        # By default EffectStatements have a bool value for condition, this if statement handles that
+                        evaluation = statement.condition
+                    else:
+                        # Our statement in the domain description has a precondition, validate it against our model
+                        evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
+                    if evaluation and isinstance(statement, Causes):
+                        # Our statement precondition holds, so we add it to the returned statements
+                        if current_statements['causes'] is None:
+                            current_statements['causes'] = statement
                         else:
-                            # Our statement in the domain description has a precondition, validate it against our model
-                            evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
-                        if evaluation and isinstance(statement, Causes):
-                            # Our statement precondition holds, so we add it to the returned statements
-                            if current_statements['causes'] is None:
-                                current_statements['causes'] = statement
-                            else:
-                                # We already have a Causes statement, so join its effect with the existing one
-                                # This case handles the following scenario:
-                                # Load causes ~hidden by A
-                                # Load causes loaded by A
-                                # Both statements are joined into 1 larger one: Load causes ~hidden & loaded by A
-                                current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
-                                                                                          statement, is_causes=True)
-                        elif evaluation and isinstance(statement, Releases):
-                            # Our statement precondition holds, so we add it to the returned statements
-                            if current_statements['releases'] is None:
-                                current_statements['releases'] = self.create_tautology_from_statements(statement, statement)
-                            else:
-                                # We cannot have multiple releases effects at the same time?
-                                # TODO discuss and verify
-                                pass
+                            # We already have a Causes statement, so join its effect with the existing one
+                            # This case handles the following scenario:
+                            # Load causes ~hidden by A
+                            # Load causes loaded by A
+                            # Both statements are joined into 1 larger one: Load causes ~hidden & loaded by A
+                            current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
+                                                                                      statement, is_causes=True)
+                    elif evaluation and isinstance(statement, Releases):
+                        # Our statement precondition holds, so we add it to the returned statements
+                        if current_statements['releases'] is None:
+                            current_statements['releases'] = self.create_tautology_from_statements(statement, statement)
+                        else:
+                            # We cannot have multiple releases effects at the same time?
+                            # TODO discuss and verify
+                            pass
 
-            if current_action is not None:
-                # Only 1 action can affect the model at a time, so if we found one then break the loop
-                break
+        # TODO not needed probably slight optimation
+        # if model.triggered_actions is not None:
+        #     model.triggered_actions = None
 
-        # If no action is affecting us now, assume model is valid
-        if current_action is None:
-            return True, None, None
         """
         Incorrect behavior
         if current_statements['causes'] is not None and current_statements['releases'] is not None:
@@ -257,9 +272,10 @@ class InconsistencyChecker:
 
         # Check ImpossibleAt/ImpossibleIf
         if self.action_impossible_at(current_action) or self.action_impossible_if(current_action, expr, expr_values):
-            return False, None, None
+            err_str = "Impossible if holds"
+            return False, None, None, err_str
 
-        return True, current_action, current_statements
+        return True, current_action, current_statements, err_str
 
     def remove_bad_observations(self, models: List[Model], time: int):
         """
@@ -334,11 +350,13 @@ class InconsistencyChecker:
             return Releases(action=statement1.action,
                             effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
                             duration=statement1.duration)
+
     """
     Returns a Releases statement that will have a formula that holds for all input (tautology)
     So if we have the formula "loaded" it will create "loaded or ~loaded" 
     This statement will hold if "loaded" is true or false, we need this for the engine
     """
+
     def create_tautology_from_statements(self, statement1: Statement, statement2: Statement) -> Statement:
         return Releases(action=statement1.action,
                         effect=Condition(Or(statement1.effect.formula, Not(statement2.effect.formula))),

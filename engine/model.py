@@ -21,6 +21,7 @@ class Model:
         self.last_time_point = last_action.begin_time + last_action.duration + 1
         self.fluent_history = self.initialize_history(scenario)
         self.action_history = dict()
+        self.triggered_actions = None  # time: int -> statement
 
     def initialize_history(self, scenario: Scenario) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)

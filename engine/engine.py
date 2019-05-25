@@ -1,7 +1,7 @@
 from engine.inconsistency_checker import InconsistencyChecker
 from engine.model import Model
 from sympy.logic import boolalg
-from structs.statements import Causes, Releases, Statement, EffectStatement
+from structs.statements import Causes, Releases, Statement, EffectStatement, Triggers
 from structs.action_occurrence import ActionOccurrence
 from typing import List, Dict, Optional
 from copy import deepcopy
@@ -78,9 +78,10 @@ class Engine:
             # Only one action can be executed at a time
             new_models = []
             for i in range(len(self.models) - 1, -1, -1):
-                is_model_valid, action, statements = self.checker.validate_model(self.models[i], t)
+                is_model_valid, action, statements, err_str = self.checker.validate_model(self.models[i], t)
                 if not is_model_valid:
                     print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
+                    print("Reason:", err_str)
                     self.models.remove(self.models[i])
                 elif action is not None:
                     self.models[i].add_to_action_history(action.begin_time, action)
@@ -91,7 +92,7 @@ class Engine:
             self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
-
+            self.handle_trigger_statements(time=t)
             print('At time', t, 'we have', len(self.models), 'models')
 
         return True
@@ -118,7 +119,9 @@ class Engine:
             new_model.update_fluent_history(s, time, duration)
             new_models.append(new_model)
 
-        if not is_releases_statement and model in self.models:
+        # if not is_releases_statement and model in self.models:
+        #     self.models.remove(model)
+        if model in self.models:
             self.models.remove(model)
 
         return new_models
@@ -140,3 +143,12 @@ class Engine:
             new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, statements['causes'].duration, False)
 
         return new_models
+
+    def handle_trigger_statements(self, time: int):
+        for model in self.models:
+            expr, expr_values = model.get_symbol_values(time)
+            for statement in self.checker.domain_desc.statements:
+                if isinstance(statement, Triggers):
+                    evaluation = self.checker.evaluate(expr, expr_values, statement.condition.formula)
+                    if evaluation:
+                        model.triggered_actions = {time: ActionOccurrence(statement.action, time, 'nobody', 1)}
