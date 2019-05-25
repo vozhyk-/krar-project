@@ -210,48 +210,50 @@ class InconsistencyChecker:
                         else:
                             # Our statement in the domain description has a precondition, validate it against our model
                             evaluation = self.evaluate(expr, expr_values, statement.condition.formula)
-                        if evaluation and isinstance(statement, Releases):
+                        if evaluation and isinstance(statement, Causes):
                             # Our statement precondition holds, so we add it to the returned statements
-                            if current_statements['releases'] is None:
-                                current_statements['releases'] = statement
-                            else:
-                                # We already have a releases statement, so join its effect with the existing one
-                                # This case handles the following scenario:
-                                # Load releases ~hidden in 2
-                                # Load releases loaded in 2
-                                # Both statements are joined into 1 larger one: Load releases ~hidden & loaded in 2
-                                current_statements['releases'] = self.join_statement_by_and(
-                                    current_statements['releases'],
-                                    statement, False)
-                        # The same happens to causes statements...
-                        elif evaluation and isinstance(statement, Causes):
                             if current_statements['causes'] is None:
                                 current_statements['causes'] = statement
                             else:
+                                # We already have a Causes statement, so join its effect with the existing one
+                                # This case handles the following scenario:
+                                # Load causes ~hidden by A
+                                # Load causes loaded by A
+                                # Both statements are joined into 1 larger one: Load causes ~hidden & loaded by A
                                 current_statements['causes'] = self.join_statement_by_and(current_statements['causes'],
-                                                                                          statement, True)
+                                                                                          statement, is_causes=True)
+                        elif evaluation and isinstance(statement, Releases):
+                            # Our statement precondition holds, so we add it to the returned statements
+                            if current_statements['releases'] is None:
+                                current_statements['releases'] = self.create_tautology_from_statements(statement, statement)
+                            else:
+                                # We cannot have multiple releases effects at the same time?
+                                # TODO discuss and verify
+                                pass
 
             if current_action is not None:
                 # Only 1 action can affect the model at a time, so if we found one then break the loop
                 break
-                # If no action is affecting us now, assume model is valid
 
+        # If no action is affecting us now, assume model is valid
         if current_action is None:
             return True, None, None
-
+        """
+        Incorrect behavior
         if current_statements['causes'] is not None and current_statements['releases'] is not None:
             # Since at this time the model is affected by releases AND causes statements...
             # we must join the causes/releases effect by and into 1 releases effect.
             # This is because the causes statements will ALWAYS occur, and the releases effect MAY occur
             # Example: imagine we have the following 2 statements in our DD:
-            # Load causes loaded in 1
-            # Load releases ~hidden in 1
+            # Load causes loaded
+            # Load releases ~hidden
             # What will happen? The fluent "loaded" will ALWAYS hold in the new model because it is CAUSED
             # The fluent "~hidden" may or may not hold because it is RELEASED. So we create a new releases statement:
             # "Load releases loaded & ~hidden", now our engine will fork models where "loaded & ~hidden"
             # may or may not hold, but "loaded" will always hold because we have a causes statement for it
             current_statements['releases'] = self.join_statement_by_and(current_statements['releases'],
                                                                         current_statements['causes'], False)
+        """
 
         # Check ImpossibleAt/ImpossibleIf
         if self.action_impossible_at(current_action) or self.action_impossible_if(current_action, expr, expr_values):
@@ -332,6 +334,15 @@ class InconsistencyChecker:
             return Releases(action=statement1.action,
                             effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
                             duration=statement1.duration)
+    """
+    Returns a Releases statement that will have a formula that holds for all input (tautology)
+    So if we have the formula "loaded" it will create "loaded or ~loaded" 
+    This statement will hold if "loaded" is true or false, we need this for the engine
+    """
+    def create_tautology_from_statements(self, statement1: Statement, statement2: Statement) -> Statement:
+        return Releases(action=statement1.action,
+                        effect=Condition(Or(statement1.effect.formula, Not(statement2.effect.formula))),
+                        duration=statement1.duration)
 
     def action_impossible_at(self, action: ActionOccurrence) -> bool:
         """

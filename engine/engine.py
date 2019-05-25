@@ -91,6 +91,7 @@ class Engine:
             self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
+
             print('At time', t, 'we have', len(self.models), 'models')
 
         return True
@@ -103,7 +104,7 @@ class Engine:
         :param model: The model to be forked, it could be removed from the list of models if
         :param formula: The sympy boolean formula that must hold at this time
         :param time: The time at which the action effect given by "formula" must hold in the model
-        :param duration: The duration of action is used for occusion regions
+        :param duration: The duration of action is used for occlusion regions
         :param is_releases_statement: If true, then we keep the model that we want to fork. 
         If false, it means we want to fork based on a CAUSES statement,
         so we remove the model that was passed in because we only want to have models where formula MUST HOLD
