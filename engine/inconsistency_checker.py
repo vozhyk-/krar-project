@@ -5,7 +5,7 @@ from sympy.logic.boolalg import Not, And, Or
 from structs.statements import Causes, Releases
 from engine.model import Model
 from typing import List, Union, Tuple, Dict, Optional
-from structs.statements import ImpossibleAt, ImpossibleIf, Statement, EffectStatement
+from structs.statements import ImpossibleAt, ImpossibleIf, ImpossibleBy, Statement, EffectStatement
 from structs.action_occurrence import ActionOccurrence
 import sympy.parsing.sympy_parser as sympy_parser
 from sympy.utilities.lambdify import lambdify
@@ -34,6 +34,7 @@ class InconsistencyChecker:
         self.observations_at_time_t = dict()  # Maps time: int -> List[Observation]
         # ImpossibleIf statements
         self.action_formula_constraints = list()  # List[ImpossibleIf]
+        self.impossible_by_statements = []  # List[ImpossibleBy]
         # ImpossibleAt statements
         self.action_time_constraints_at_time_t = dict()  # Maps time: int -> List[str] (List of action names not executable at t)
         self.last_time = self.sorted_actions[-1].begin_time + self.sorted_actions[-1].duration + 1
@@ -49,6 +50,9 @@ class InconsistencyChecker:
         self.action_formula_constraints = [fc for fc in self.domain_desc.statements if
                                            isinstance(fc,
                                                       ImpossibleIf)]
+        self.impossible_by_statements = [x for x in self.domain_desc.statements if
+                                         isinstance(x,
+                                                    ImpossibleBy)]
         for t in range(self.last_time):
             action_at_time_t = next((action for action in self.sorted_actions if action.begin_time == t),
                                     None)
@@ -76,27 +80,24 @@ class InconsistencyChecker:
                     self.joined_statements[statement.action] = [statement]
                 else:
                     for j in range(len(self.joined_statements[statement.action])):
-                        # print(self.joined_statements[statement.action])
-                        if self.joined_statements[statement.action][j].duration == statement.duration and isinstance(
-                                statement, Releases) and isinstance(self.joined_statements[statement.action][j],
-                                                                    Releases) and \
-                                self.joined_statements[statement.action][j].condition == statement.condition:
-                            self.joined_statements[statement.action][j] = self.join_statement_by_and(
-                                self.joined_statements[statement.action][j], statement, False)
-                        elif self.joined_statements[statement.action][j].duration == statement.duration and isinstance(
-                                statement, Causes) and isinstance(self.joined_statements[statement.action][j],
-                                                                  Causes) and self.joined_statements[statement.action][
-                            j].condition == statement.condition:
-                            self.joined_statements[statement.action][j] = self.joined_statements[statement.action][
-                                j] = self.join_statement_by_and(self.joined_statements[statement.action][j], statement,
-                                                                True)
+                        if self.joined_statements[statement.action][j].duration == statement.duration and \
+                                self.joined_statements[statement.action][j].condition == statement.condition and \
+                                self.joined_statements[statement.action][j].agent == statement.agent:
+                            if isinstance(statement, Causes) and isinstance(self.joined_statements[statement.action][j],
+                                                                            Causes):
+                                self.joined_statements[statement.action][j] = self.join_statement_by_and(
+                                    self.joined_statements[statement.action][j], statement, True)
+                            elif isinstance(statement, Releases) and isinstance(
+                                    self.joined_statements[statement.action][j], Releases):
+                                self.joined_statements[statement.action][j] = self.create_tautology_from_statements(
+                                    self.joined_statements[statement.action][j], statement)
                         else:
                             self.joined_statements[statement.action].append(statement)
 
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
-            if (self.sorted_actions[i].begin_time +
-                self.sorted_actions[i].duration) > self.sorted_actions[i + 1].begin_time:
+            if (self.sorted_actions[i].begin_time + self.sorted_actions[i].duration) > self.sorted_actions[
+                i + 1].begin_time:
                 # print('Overlapping action found, action name:', self.sorted_actions[i].name, 'overlaps with action:',
                 #       self.sorted_actions[i + 1].name)
                 self.is_consistent = False
@@ -175,7 +176,7 @@ class InconsistencyChecker:
         return new_list
 
     def validate_model(self, model: Model, time: int) -> Tuple[
-        bool, Optional[ActionOccurrence], Optional[Dict[str, Optional[EffectStatement]]], str]:
+        bool, Optional[ActionOccurrence], Optional[EffectStatement], str]:
         """
         Firstly we find an action,
         then we look in the domain description for Releases/Causes statements that have an effect at this specific time.
@@ -186,10 +187,11 @@ class InconsistencyChecker:
         :param time: The time at which we check/validate the model
         :return: A tuple of 4 elements, first is a bool that says whether or not model is valid
         second is the action that is affecting the model passed into the method, and the third either None (if no statements associated with action were found)
-        or a dict that contains the keys "releases" and the string "causes", with the value storing their respective Releases/Causes statement
+        or a Effect statement that contains the action to be executed along with associated agent
         that is correlated with the action. 4th returns error string
         """
         current_statements = {'releases': None, 'causes': None}
+        statement_to_be_executed = None
         current_action = None
         expr = None
         expr_values = None
@@ -202,7 +204,11 @@ class InconsistencyChecker:
         triggered_action_executed_now = False if triggered_action_times is None else t in triggered_action_times
 
         if action_from_acs_executed_now and triggered_action_executed_now:
-            err_str = "Model is invalid because 2 actions are executed at time: {}\n{} {}".format(t, self.actions_at_time_t[t], model.triggered_actions[t])
+            err_str = "Model is invalid because 2 actions are executed at time: {}\n{} {}".format(t,
+                                                                                                  self.actions_at_time_t[
+                                                                                                      t],
+                                                                                                  model.triggered_actions[
+                                                                                                      t])
             return False, None, None, err_str
         elif action_from_acs_executed_now:
             action_src = self.actions_at_time_t
@@ -214,7 +220,7 @@ class InconsistencyChecker:
 
         action = action_src[t]
         for statement in self.joined_statements[action.name]:
-            if statement.action == action.name and action.begin_time + statement.duration == time:
+            if statement.action == action.name and action.begin_time + statement.duration == time and statement.agent == action.agent:
                 evaluation = None
                 current_action = action
                 if statement.duration <= action.duration:  # Use only statements which duration can be filled in the action occurence
@@ -245,11 +251,23 @@ class InconsistencyChecker:
                         if current_statements['releases'] is None:
                             current_statements['releases'] = self.create_tautology_from_statements(statement, statement)
                         else:
-                            # We cannot have multiple releases effects at the same time?
-                            # TODO discuss and verify
-                            pass
+                            current_statements['releases'] = self.create_tautology_from_statements(
+                                current_statements['releases'], statement)
 
-        # TODO not needed probably slight optimation
+        if current_action is None:
+            # If no action is affecting us now, assume model is valid
+            # Action is executed with empty effect because no agent can execute it
+            return True, None, None, err_str
+
+        if (current_statements['causes'] is not None) and (current_statements['releases'] is not None):
+            statement_to_be_executed = self.join_statement_by_and(current_statements['causes'],
+                                                                  current_statements['releases'], is_causes=True)
+        elif current_statements['causes'] is not None:
+            statement_to_be_executed = current_statements['causes']
+        elif current_statements['releases'] is not None:
+            statement_to_be_executed = current_statements['releases']
+
+        # TODO not needed probably slight optimization
         # if model.triggered_actions is not None:
         #     model.triggered_actions = None
 
@@ -270,12 +288,15 @@ class InconsistencyChecker:
                                                                         current_statements['causes'], False)
         """
 
-        # Check ImpossibleAt/ImpossibleIf
-        if self.action_impossible_at(current_action) or self.action_impossible_if(current_action, expr, expr_values):
-            err_str = "Impossible if holds"
+        # Check ImpossibleBy/ImpossibleIf
+        if self.action_impossible_if(current_action, expr, expr_values):
+            err_str = "Impossible if holds at time {} Action: {} Fluents: {} Values: {}".format(t, current_action.name, expr, expr_values)
+            return False, None, None, err_str
+        if self.action_impossible_by(action):
+            err_str = "Impossible by holds at time {} Action: {} Agent: {}".format(t, current_action.name, current_action.agent)
             return False, None, None, err_str
 
-        return True, current_action, current_statements, err_str
+        return True, current_action, statement_to_be_executed, err_str
 
     def remove_bad_observations(self, models: List[Model], time: int):
         """
@@ -396,4 +417,10 @@ class InconsistencyChecker:
                     #       'expr:',
                     #       expr, 'expr_values:', expr_values)
                     return True
+        return False
+
+    def action_impossible_by(self, action: ActionOccurrence) -> bool:
+        for impossible_by in self.impossible_by_statements:
+            if impossible_by.action == action.name and action.agent == impossible_by.agent:
+                return True
         return False

@@ -20,6 +20,7 @@ class Engine:
         self.checker = None
         self.models = []
         # self.run()
+
     '''
     //////////////////////////////
     //////////ALGORITHM///////////
@@ -65,12 +66,12 @@ class Engine:
         # Create initial model which corresponds to the initial state
         initial_model = Model(self.checker.valid_scenario)
         # We may have more than 1 initial model
-        self.models += self.fork_model(initial_model, self.checker.sorted_observations[0].condition.formula, 0, 0, True)
+        self.models += self.fork_model(initial_model, self.checker.sorted_observations[0].condition.formula, 0, 0)
         self.models = self.checker.remove_duplicate_models(self.models)
-        i = 0
-        for m in self.models:
-            print('Initial model:', i, '\n', m)
-            i += 1
+        # i = 0
+        # for m in self.models:
+        #     print('Initial model:', i, '\n', m)
+        #     i += 1
 
         total_time = initial_model.fluent_history.shape[0]
         for t in range(total_time):
@@ -80,7 +81,7 @@ class Engine:
             for i in range(len(self.models) - 1, -1, -1):
                 is_model_valid, action, statements, err_str = self.checker.validate_model(self.models[i], t)
                 if not is_model_valid:
-                    print('Model:\n', self.models[i], 'IS NOT VALID at time:', t)
+                    print('Model:\n', self.models[i], 'IS NOT VALID at time:', t - 1)
                     print("Reason:", err_str)
                     self.models.remove(self.models[i])
                 elif action is not None:
@@ -97,7 +98,7 @@ class Engine:
 
         return True
 
-    def fork_model(self, model: Model, formula: boolalg.Boolean, time: int, duration: int, is_releases_statement: bool = False) -> \
+    def fork_model(self, model: Model, formula: boolalg.Boolean, time: int, duration: int) -> \
             List[Model]:
         """
         Checks all solutions to formula  for a given "causes" or "releases" statement and 
@@ -119,28 +120,26 @@ class Engine:
             new_model.update_fluent_history(s, time, duration)
             new_models.append(new_model)
 
-        # if not is_releases_statement and model in self.models:
-        #     self.models.remove(model)
         if model in self.models:
             self.models.remove(model)
 
         return new_models
 
-    def execute_action(self, model: Model, action: ActionOccurrence, statements: Dict[str, EffectStatement]) -> List[Model]:
+    def execute_action(self, model: Model, action: ActionOccurrence,
+                       statement_to_be_executed: Optional[EffectStatement]) -> List[Model]:
         """
         We take an action occurrence (from a scenario) and the EffectStatement that is correlated with it,
         then we attempt to fork models based on the statement's boolean formula
         :param model: The model in which we wish to execute the given action
         :param action: The action occurrence which is affecting the model at the current time
-        :param statements: A dict that contains 2 keys 'releases' and 'causes'
-        storing the Releases and Causes statement affecting the model at this time
+        :param statement_to_be_executed: Optional effect statement of action that will be executed
         :return: The list of models that has been forked
         """
         new_models = []
-        if statements is not None and statements['releases'] is not None:
-            new_models += self.fork_model(model, statements['releases'].effect.formula, action.begin_time + statements['releases'].duration, statements['releases'].duration, True)
-        if statements is not None and statements['causes'] is not None:
-            new_models += self.fork_model(model, statements['causes'].effect.formula, action.begin_time + statements['causes'].duration, statements['causes'].duration, False)
+        if statement_to_be_executed is not None:
+            new_models += self.fork_model(model, statement_to_be_executed.effect.formula,
+                                          action.begin_time + statement_to_be_executed.duration,
+                                          statement_to_be_executed.duration)
 
         return new_models
 
