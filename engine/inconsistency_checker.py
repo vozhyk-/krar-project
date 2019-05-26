@@ -81,16 +81,21 @@ class InconsistencyChecker:
                 else:
                     for j in range(len(self.joined_statements[statement.action])):
                         if self.joined_statements[statement.action][j].duration == statement.duration and \
-                                self.joined_statements[statement.action][j].condition == statement.condition and \
-                                self.joined_statements[statement.action][j].agent == statement.agent:
+                                self.joined_statements[statement.action][j].condition == statement.condition:
                             if isinstance(statement, Causes) and isinstance(self.joined_statements[statement.action][j],
                                                                             Causes):
-                                self.joined_statements[statement.action][j] = self.join_statement_by_and(
-                                    self.joined_statements[statement.action][j], statement, True)
+                                if self.joined_statements[statement.action][j].agent == statement.agent:
+                                    self.joined_statements[statement.action][j] = self.join_statement_by_and(
+                                        self.joined_statements[statement.action][j], statement, True)
+                                else:
+                                    self.joined_statements[statement.action].append(statement)
                             elif isinstance(statement, Releases) and isinstance(
                                     self.joined_statements[statement.action][j], Releases):
-                                self.joined_statements[statement.action][j] = self.create_tautology_from_statements(
-                                    self.joined_statements[statement.action][j], statement)
+                                if self.joined_statements[statement.action][j].agent == statement.agent:
+                                    self.joined_statements[statement.action][j] = self.create_tautology_from_statements(
+                                        self.joined_statements[statement.action][j], statement)
+                                else:
+                                    self.joined_statements[statement.action].append(statement)
                         else:
                             self.joined_statements[statement.action].append(statement)
 
@@ -366,11 +371,11 @@ class InconsistencyChecker:
         if is_causes:
             return Causes(action=statement1.action,
                           effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
-                          duration=statement1.duration)
+                          duration=statement1.duration, agent=statement1.agent)
         else:
             return Releases(action=statement1.action,
                             effect=Condition(And(statement1.effect.formula, statement2.effect.formula)),
-                            duration=statement1.duration)
+                            duration=statement1.duration, agent=statement1.agent)
 
     """
     Returns a Releases statement that will have a formula that holds for all input (tautology)
@@ -381,7 +386,7 @@ class InconsistencyChecker:
     def create_tautology_from_statements(self, statement1: Statement, statement2: Statement) -> Statement:
         return Releases(action=statement1.action,
                         effect=Condition(Or(statement1.effect.formula, Not(statement2.effect.formula))),
-                        duration=statement1.duration)
+                        duration=statement1.duration, agent=statement1.agent)
 
     def action_impossible_at(self, action: ActionOccurrence) -> bool:
         """

@@ -152,8 +152,22 @@ class InvolvedQuery(Query):
         self.str = "{} involved {} ".format(self.query_type, self.agent)
 
     def validate(self,  models: List[Model], scen: Scenario = None) -> bool:
-        # TODO
-        return False
+        if len(models) == 0:
+            # If no models then agent surely was not involved?
+            return True
+
+        for model in models:
+            agent_involved_in_model = False
+            for action in model.action_history.values():
+                if action.agent == self.agent and self.query_type == QueryType.POSSIBLY:
+                    return True
+                elif action.agent == self.agent:
+                    agent_involved_in_model = True
+                    break
+            if not agent_involved_in_model and self.query_type == QueryType.NECESSARY:
+                return False
+
+        return True
 
     def __str__(self):
         return self.str

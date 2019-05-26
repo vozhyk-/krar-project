@@ -14,6 +14,7 @@ import parsing.condition
 
 def parse(input: str) -> Statement:
     types = [
+        EffectStatementAgentParser,
         EffectStatementParser,
         ImpossibleIfParser,
         ImpossibleByParser,
@@ -26,14 +27,21 @@ def parse(input: str) -> Statement:
             return t.parse_groups(*match.groups())
 
 
-class EffectStatementParser:
+def parse_statement_type(raw_statement_type: str) -> type:
+    if raw_statement_type == "causes":
+        return Causes
+    elif raw_statement_type == "releases":
+        return Releases
+
+
+class EffectStatementAgentParser:
     regex = re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))? by ([^ ]*)$")
 
     @staticmethod
     def parse_groups(raw_action, raw_statement_type,
                      raw_effect, if_clause, raw_condition, agent):
-        statement_type = EffectStatementParser.parse_statement_type(raw_statement_type)
-        # condition_args = EffectStatementParser.parse_optional_condition_args(raw_condition)
+        statement_type = parse_statement_type(raw_statement_type)
+        # condition_args = EffectStatementAgentParser.parse_optional_condition_args(raw_condition)
 
         return statement_type(
             action=raw_action,
@@ -41,13 +49,6 @@ class EffectStatementParser:
             condition=parsing.condition.parse(raw_condition),
             agent=agent,
             )
-
-    @staticmethod
-    def parse_statement_type(raw_statement_type: str) -> type:
-        if raw_statement_type == "causes":
-            return Causes
-        elif raw_statement_type == "releases":
-            return Releases
 
     # @staticmethod
     # def parse_optional_condition_args(raw_condition: str) -> dict:
@@ -57,6 +58,23 @@ class EffectStatementParser:
     #     # but we just parse it as a formula anyway.
     #     condition = parsing.condition.parse(raw_condition)
     #     return {"condition": condition}
+
+
+class EffectStatementParser:
+    regex = re.compile("^([^ ]*) (causes|releases) (.*?)( if (.*))?$")
+
+    @staticmethod
+    def parse_groups(raw_action, raw_statement_type,
+                     raw_effect, if_clause, raw_condition):
+        statement_type = parse_statement_type(raw_statement_type)
+        # condition_args = EffectStatementAgentParser.parse_optional_condition_args(raw_condition)
+
+        return statement_type(
+            action=raw_action,
+            effect=parsing.condition.parse(raw_effect),
+            condition=parsing.condition.parse(raw_condition),
+            agent='nobody',
+            )
 
 
 class ImpossibleIfParser:
