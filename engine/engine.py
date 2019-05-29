@@ -143,7 +143,7 @@ class Engine:
 
         return new_models
 
-    def handle_trigger_statements(self, time: int, scenario: Scenario):
+    def handle_trigger_statements(self, time: int):
         for model in self.models:
             expr, expr_values = model.get_symbol_values(time)
             expr_pre, expr_values_pre = model.get_symbol_values(time-1);
