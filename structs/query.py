@@ -31,11 +31,11 @@ class ActionQuery(Query):
         if len(models) == 0:
             return True
 
-        scenario_act_names = [act.name.lower() for act in scen.action_occurrences]
-        for action_str in self.action_strings:
-            if action_str not in scenario_act_names:
-                print("Action:", action_str, " is not in the scenario!")
-                return False
+        #scenario_act_names = [act.name.lower() for act in scen.action_occurrences]
+        #for action_str in self.action_strings:
+        #    if action_str not in scenario_act_names:
+        #        print("Action:", action_str, " is not in the scenario!")
+        #        return False
         # print('self.action_strings:', self.action_strings)
         is_valid = False
         if self.query_type == QueryType.POSSIBLY:

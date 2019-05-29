@@ -351,6 +351,27 @@ class InconsistencyChecker:
         return eval
 
     @staticmethod
+    def evaluate_trigger(symbols_pre: List[Symbol], symbol_values_pre: List[bool], symbols: List[Symbol], symbol_values: List[bool], formula: boolalg.Boolean) -> bool:
+
+        t = 0
+        f = lambdify(symbols_pre, formula, modules={'And': any, 'Or': all})
+        combinations = InconsistencyChecker.get_all_combinations(symbol_values_pre)
+        eval = f(*combinations[0])
+        for i in range(1, len(combinations)):
+            if f(*combinations[i]) != eval:
+                return None;
+        if not eval:
+            f = lambdify(symbols, formula, modules={'And': any, 'Or': all})
+            combinations = InconsistencyChecker.get_all_combinations(symbol_values)
+            eval = f(*combinations[0])
+            for i in range(1, len(combinations)):
+                if f(*combinations[i]) != eval:
+                    return None
+            return eval
+        else:
+            return False
+
+    @staticmethod
     def get_all_combinations(symbol_values: List[bool]) -> List[List[bool]]:
         combinations = []
         combinations.append(symbol_values)

@@ -18,7 +18,8 @@ def parse(input: str) -> Statement:
         EffectStatementParser,
         ImpossibleIfParser,
         ImpossibleByParser,
-        TriggersParser
+        TriggersParser,
+        TriggersAgentParser
     ]
 
     for t in types:
@@ -107,4 +108,11 @@ class TriggersParser:
 
     @staticmethod
     def parse_groups(raw_condition, raw_action):
-        return Triggers(condition=parsing.condition.parse(raw_condition), action=raw_action)
+        return Triggers(condition=parsing.condition.parse(raw_condition), action=raw_action, agent='nobody')
+
+class TriggersAgentParser:
+    regex = re.compile("^([^ ]*) triggers ([^ ]*) by ([^ ]*)$")
+
+    @staticmethod
+    def parse_groups(raw_condition, raw_action, agent):
+        return Triggers(condition=parsing.condition.parse(raw_condition), action=raw_action, agent=agent)
