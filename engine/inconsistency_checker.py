@@ -79,25 +79,7 @@ class InconsistencyChecker:
                 if statement.action not in self.joined_statements:
                     self.joined_statements[statement.action] = [statement]
                 else:
-                    for j in range(len(self.joined_statements[statement.action])):
-                        if self.joined_statements[statement.action][j].duration == statement.duration and \
-                                self.joined_statements[statement.action][j].condition == statement.condition:
-                            if isinstance(statement, Causes) and isinstance(self.joined_statements[statement.action][j],
-                                                                            Causes):
-                                if self.joined_statements[statement.action][j].agent == statement.agent:
-                                    self.joined_statements[statement.action][j] = self.join_statement_by_and(
-                                        self.joined_statements[statement.action][j], statement, True)
-                                else:
-                                    self.joined_statements[statement.action].append(statement)
-                            elif isinstance(statement, Releases) and isinstance(
-                                    self.joined_statements[statement.action][j], Releases):
-                                if self.joined_statements[statement.action][j].agent == statement.agent:
-                                    self.joined_statements[statement.action][j] = self.create_tautology_from_statements(
-                                        self.joined_statements[statement.action][j], statement)
-                                else:
-                                    self.joined_statements[statement.action].append(statement)
-                        else:
-                            self.joined_statements[statement.action].append(statement)
+                    self.joined_statements[statement.action].append(statement)
 
     def check_for_overlapping_actions(self):
         for i in range(len(self.sorted_actions) - 1):
@@ -116,14 +98,14 @@ class InconsistencyChecker:
             statement = self.domain_desc.statements[i]
             # print(statement)
             # join action with its causes/releases effect
-            if isinstance(statement, (Causes, Releases)):
+            if isinstance(statement, Causes):
                 if statement.action not in action_dict:
                     action_dict[statement.action] = statement.effect.formula
                 action_dict[statement.action] = And(action_dict[statement.action], statement.effect.formula)
 
-        for action_name, action_cond in action_dict.items():
-            if not satisfiable(action_cond):
-                # print('action_cond:', action_cond, 'is not satisfiable')
+        for action_name, action_effect in action_dict.items():
+            if not satisfiable(action_effect):
+                print('action_effect:', action_effect, 'is not satisfiable')
                 self.is_consistent = False
                 break
 
@@ -297,9 +279,12 @@ class InconsistencyChecker:
         if self.action_impossible_if(current_action, expr, expr_values):
             err_str = "Impossible if holds at time {} Action: {} Fluents: {} Values: {}".format(t, current_action.name, expr, expr_values)
             return False, None, None, err_str
-        if self.action_impossible_by(action):
+        elif self.action_impossible_by(current_action):
             err_str = "Impossible by holds at time {} Action: {} Agent: {}".format(t, current_action.name, current_action.agent)
             return False, None, None, err_str
+        elif not satisfiable(statement_to_be_executed.effect.formula):
+            err_str = "Formula not satisfiable {} Action: {} Agent: {} Formula: {}".format(t, current_action.name,
+                                                                                   current_action.agent, statement_to_be_executed.effect.formula)
 
         return True, current_action, statement_to_be_executed, err_str
 
