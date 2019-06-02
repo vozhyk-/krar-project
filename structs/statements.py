@@ -42,3 +42,4 @@ class ImpossibleBy(Statement, NamedTuple):
 class Triggers(Statement, NamedTuple):
     condition: Condition
     action: str
+    agent: str

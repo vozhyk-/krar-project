@@ -93,7 +93,7 @@ class Engine:
             self.checker.remove_bad_observations(self.models, t)
             # Remove duplicates
             self.models = self.checker.remove_duplicate_models(self.models)
-            self.handle_trigger_statements(time=t)
+            self.handle_trigger_statements(time=t, scenario=Scenario)
             print('At time', t, 'we have', len(self.models), 'models')
 
         return True
@@ -146,8 +146,9 @@ class Engine:
     def handle_trigger_statements(self, time: int):
         for model in self.models:
             expr, expr_values = model.get_symbol_values(time)
+            expr_pre, expr_values_pre = model.get_symbol_values(time-1);
             for statement in self.checker.domain_desc.statements:
                 if isinstance(statement, Triggers):
-                    evaluation = self.checker.evaluate(expr, expr_values, statement.condition.formula)
+                    evaluation = self.checker.evaluate_trigger(expr_pre, expr_values_pre, expr, expr_values, statement.condition.formula)
                     if evaluation:
-                        model.triggered_actions = {time: ActionOccurrence(statement.action, time, 'nobody', 1)}
+                        model.triggered_actions = {time: ActionOccurrence(statement.action, time, statement.agent, 1)}

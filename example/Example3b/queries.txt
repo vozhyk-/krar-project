@@ -1,0 +1,6 @@
+possibly involved Tom
+necessary involved Tom
+possibly f at 1
+necessary f at 1
+possibly B at 0
+necessary B at 0
