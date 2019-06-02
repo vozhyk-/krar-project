@@ -143,12 +143,14 @@ class Engine:
 
         return new_models
 
-    def handle_trigger_statements(self, time: int):
+    def handle_trigger_statements(self, time: int, scenario: Scenario):
         for model in self.models:
             expr, expr_values = model.get_symbol_values(time)
-            expr_pre, expr_values_pre = model.get_symbol_values(time-1);
+            # expr_pre, expr_values_pre = model.get_symbol_values(time-1)
             for statement in self.checker.domain_desc.statements:
                 if isinstance(statement, Triggers):
-                    evaluation = self.checker.evaluate_trigger(expr_pre, expr_values_pre, expr, expr_values, statement.condition.formula)
+                    # evaluation = self.checker.evaluate_trigger(expr_pre, expr_values_pre, expr, expr_values, statement.condition.formula)
+                    evaluation = self.checker.evaluate(expr, expr_values, statement.condition.formula)
                     if evaluation:
-                        model.triggered_actions = {time: ActionOccurrence(statement.action, time, statement.agent, 1)}
+                        # model.triggered_actions = {time: ActionOccurrence(statement.action, time, statement.agent, 1)}
+                        model.triggered_actions = {time: ActionOccurrence(statement.action, time, 'nobody', 1)}
