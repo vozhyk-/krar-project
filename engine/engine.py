@@ -169,3 +169,18 @@ class Engine:
                 if statement.condition.formula is not True:
                     fluents = list(set(fluents) | set(statement.condition.formula.atoms()))
         return fluents
+
+    def create_initial_condition(self, scenario: Scenario, fluents: List[Symbol]):
+        initial_statement = BooleanFalse
+        if len(scenario.observations) != 0 and scenario.observations[0].begin_time == 0:
+            initial_statement = scenario.observations[0].condition.formula
+            not_used_fluents = list(set(fluents) - set(scenario.observations[0].condition.formula.atoms()))
+            for fluent in not_used_fluents:
+                initial_statement = Or(initial_statement, Or(fluent, Not(fluent)))
+        else:
+            for fluent in fluents:
+                if initial_statement is BooleanFalse:
+                    initial_statement = Or(fluent, Not(fluent))
+                else:
+                    initial_statement = Or(initial_statement, Or(fluent, Not(fluent)))
+        return initial_statement
