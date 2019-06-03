@@ -46,7 +46,7 @@ class ActionQuery(Query):
                     if act_str not in model_action_strings:
                         break
                 # TODO simplify logic
-                t = self.time_point
+                t = int(self.time_point)
                 for i in range(len(self.action_strings)):
                     if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
                         # found first action
@@ -80,7 +80,7 @@ class ActionQuery(Query):
                     if act_str not in model_action_strings:
                         return False
                 # TODO simplify logic
-                t = self.time_point
+                t = int(self.time_point)
                 for i in range(len(self.action_strings)):
                     if t in model.action_history.keys() and model.action_history[t].name.lower() == self.action_strings[i]:
                         # found first action
@@ -105,7 +105,7 @@ class ActionQuery(Query):
                                             # valid interval found
                                             is_valid = True
                             t += 1
-                t += 1
+                #t += 1
 
         return is_valid
 
