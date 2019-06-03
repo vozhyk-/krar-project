@@ -1,7 +1,9 @@
 from engine.inconsistency_checker import InconsistencyChecker
 from engine.model import Model
 from sympy.logic import boolalg
-from structs.statements import Causes, Releases, Statement, EffectStatement, Triggers
+from sympy.core.symbol import Symbol
+from sympy.logic.boolalg import BooleanFalse, Or, Not
+from structs.statements import Causes, Releases, Statement, EffectStatement, Triggers, ImpossibleIf
 from structs.action_occurrence import ActionOccurrence
 from typing import List, Dict, Optional
 from copy import deepcopy
@@ -155,3 +157,15 @@ class Engine:
                     if evaluation:
                         # model.triggered_actions = {time: ActionOccurrence(statement.action, time, statement.agent, 1)}
                         model.triggered_actions = {time: ActionOccurrence(statement.action, time, 'nobody', 1)}
+
+    def get_all_fluents(self, domain_description: DomainDescription):
+        fluents = []
+        for statement in domain_description.statements:
+            if isinstance(statement, EffectStatement):
+                fluents = list(set(fluents) | set(statement.effect.formula.atoms()))
+                if statement.condition is not True:
+                    fluents = list(set(fluents) | set(statement.condition.formula.atoms()))
+            if isinstance(statement, Triggers) or isinstance(statement, ImpossibleIf):
+                if statement.condition.formula is not True:
+                    fluents = list(set(fluents) | set(statement.condition.formula.atoms()))
+        return fluents
