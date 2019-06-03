@@ -66,9 +66,11 @@ class Engine:
             print('in Model.run(): InconsistencyChecker claims scenario and/or domain description is invalid')
             return False
         # Create initial model which corresponds to the initial state
-        initial_model = Model(self.checker.valid_scenario)
+        fluents = self.get_all_fluents(self.checker.domain_desc)
+        initial_condition = self.create_initial_condition(self.checker.valid_scenario, fluents)
+        initial_model = Model(self.checker.valid_scenario, fluents, initial_condition)
         # We may have more than 1 initial model
-        self.models += self.fork_model(initial_model, self.checker.sorted_observations[0].condition.formula, 0, 0)
+        self.models += self.fork_model(initial_model, initial_condition, 0, 0)
         self.models = self.checker.remove_duplicate_models(self.models)
         # i = 0
         # for m in self.models:

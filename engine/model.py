@@ -8,25 +8,25 @@ from numpy import ndarray
 from copy import deepcopy
 import sympy.parsing.sympy_parser as sympy_parser
 import sympy
+from sympy.core.symbol import Symbol
+from sympy.logic import boolalg
 
 
 class Model:
-    def __init__(self, scenario: Scenario):
+    def __init__(self, scenario: Scenario, fluents: List[Symbol], initial_condition: boolalg.Boolean):
         # self.domain_description = domain_description
         # self.scenario = scenario
-        self.fluents = self.parse_initial_fluents(scenario)
+        self.fluents = fluents
         # self.consistent = False  # still to be checked later on
         acs = sorted(scenario.action_occurrences, key=lambda action: action.begin_time)
         last_action = acs[-1]
         self.last_time_point = last_action.begin_time + last_action.duration + 1
-        self.fluent_history = self.initialize_history(scenario)
+        self.fluent_history = self.initialize_history(initial_condition)
         self.action_history = dict()
         self.triggered_actions = None  # time: int -> statement
 
-    def initialize_history(self, scenario: Scenario) -> ndarray:
+    def initialize_history(self, initial_condition: boolalg.Boolean) -> ndarray:
         fluent_history = ndarray(shape=(self.last_time_point, len(self.fluents)), dtype=Fluent)
-        sorted_observations = sorted(scenario.observations, key=lambda obs: obs.begin_time)
-        assert len(sorted_observations) > 0
         '''
         for observation in sorted_observations:
             for key, value in satisfiable(observation.condition.formula).items():
@@ -39,9 +39,9 @@ class Model:
                     else:
                         continue
         '''
-        for key, value in satisfiable(sorted_observations[0].condition.formula).items():
+        for key, value in satisfiable(initial_condition).items():
             fluent = Fluent(key.name, value)
-            begin_time = sorted_observations[0].begin_time
+            begin_time = 0
             for i in range(len(fluent_history[begin_time])):
                 if fluent_history[begin_time][i] is None:
                     fluent_history[begin_time][i] = fluent
@@ -73,16 +73,6 @@ class Model:
                     fluents_under_influence.append(fluent)
 
         return fluents_under_influence
-
-    def parse_initial_fluents(self, scenario: Scenario):
-        fluents = []
-        for observation in scenario.observations:
-            if observation.begin_time == 0:
-                for key, value in satisfiable(observation.condition.formula).items():
-                    fluents.append(Fluent(key.name, value))
-                break
-
-        return fluents
 
     def update_fluent_history(self, solution: dict, time: int, duration: int):
         for key, value in solution.items():
