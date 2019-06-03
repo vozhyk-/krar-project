@@ -47,11 +47,11 @@ def main(library_file: str, scenario_file: str, query_file: str = None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--library-file', nargs='?', type=str, default='example/lib.adl3',
+    parser.add_argument('-l', '--library-file', nargs='?', type=str, default='example/Example4b/lib.adl3',
                         const='example/lib.adl3', help='Path to input ADL3 domain description file')
-    parser.add_argument('-s', '--scenario-file', nargs='?', type=str, default='example/scenario.txt',
+    parser.add_argument('-s', '--scenario-file', nargs='?', type=str, default='example/Example4b/scenario.txt',
                         const='example/scenario.txt', help='Path to input ADL3 scenario file')
-    parser.add_argument('-q', '--query-file', nargs='?', type=str, default='example/queries.txt', help='Query file to be parsed')
+    parser.add_argument('-q', '--query-file', nargs='?', type=str, default='example/Example4b/queries.txt', help='Query file to be parsed')
     args = vars(parser.parse_args())
 
     main(**args)

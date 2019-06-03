@@ -12,7 +12,7 @@ from sympy.utilities.lambdify import lambdify
 from sympy.logic import boolalg
 from sympy import Symbol
 from structs.condition import Condition
-
+from collections import defaultdict
 
 class InconsistencyChecker:
     def __init__(self, domain_desc: DomainDescription, scen: Scenario):
@@ -93,21 +93,42 @@ class InconsistencyChecker:
     # TODO change this method, right now it ignores action durations
     # TODO and whether or not statements are Releases or Causes statements, we need to rework it
     def check_for_contradictory_domain_desc(self):
-        action_dict = dict()  # Maps action name -> Conditions joined by and
+        #action_dict = dict()  # Maps action name -> Conditions joined by and
+        action_dict = defaultdict(list)
         for i in range(len(self.domain_desc.statements)):
             statement = self.domain_desc.statements[i]
             # print(statement)
             # join action with its causes/releases effect
             if isinstance(statement, Causes):
-                if statement.action not in action_dict:
-                    action_dict[statement.action] = statement.effect.formula
-                action_dict[statement.action] = And(action_dict[statement.action], statement.effect.formula)
+               # if statement.action not in action_dict:
+                    #action_dict[statement.action] = statement.effect.formula
+                #    action_dict[statement.action] = statement
+                action_dict[statement.action].append(statement)
+           #     action_dict[statement.action] = And(action_dict[statement.action], statement.effect.formula)
 
-        for action_name, action_effect in action_dict.items():
-            if not satisfiable(action_effect):
-                print('action_effect:', action_effect, 'is not satisfiable')
-                self.is_consistent = False
-                break
+        for action_name, action_statement in action_dict.items():
+            n = len(action_statement)
+            for j in range(n - 1):
+                count = 0
+                for i in range(0, n - 1 - j):
+                    if not satisfiable(And(action_statement[i].effect.formula, And(action_statement[i + 1].effect.formula))):
+                        if action_statement[i].agent == action_statement[i+1].agent:
+                            if action_statement[i].condition is True and action_statement[i+1].condition is True:
+                                print('action_effect:', action_statement, 'is not satisfiable')
+                                self.is_consistent = False
+                                break
+                            elif action_statement[i].condition is True and action_statement[i+1].condition is not True:
+                                pass
+                            elif action_statement[i].condition is not True and action_statement[i+1].condition is True:
+                                pass
+                            elif action_statement[i].condition.formula == action_statement[i+1].condition.formula:
+                                print('action_effect:', action_statement, 'is not satisfiable')
+                                self.is_consistent = False
+                                break
+            #if not satisfiable(action_statement):
+                #print('action_effect:', action_statement, 'is not satisfiable')
+                #self.is_consistent = False
+                #break
 
         # Uncomment the below if we want to remove actions with unsatisfiable preconditions
         # I don't think we have to care about this case
